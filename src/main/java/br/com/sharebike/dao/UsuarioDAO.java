@@ -245,7 +245,7 @@ public class UsuarioDAO {
 		return usuarios;
 	}
 	
-	// Função para encontrar o usuario existente e exibir algumas de suas informações
+	// Função para encontrar o usuario existente, que  pode servir também para exibir algumas de suas informações
 	public Usuario exibirUsuario(String cpfCnpj_user) {
 		 StringBuilder sqlBuilder = new StringBuilder();
 	     sqlBuilder

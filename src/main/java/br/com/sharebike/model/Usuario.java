@@ -10,12 +10,37 @@ public class Usuario {
 	private String telefone_user;
 	private String email_user;
 	private String senha_user;
-	private float avaliacao_user;
+	private Float avaliacao_user;
 	private boolean permissaoAcesso_user;
 	private boolean permissaoRank_user;
 	private boolean possuiBike_user;
 	private String fotoComprBike_user;
 	
+	public Usuario(String cpfCnpj_user, String nomeRazaoSocial_user, String foto_user, String cidade_user,
+			String estado_user, String pais_user, String telefone_user, String email_user, String senha_user,
+			boolean permissaoAcesso_user, boolean permissaoRank_user, boolean possuiBike_user, String fotoComprBike_user) {
+		super();
+		this.cpfCnpj_user = cpfCnpj_user;
+		this.nomeRazaoSocial_user = nomeRazaoSocial_user;
+		this.foto_user = foto_user;
+		this.cidade_user = cidade_user;
+		this.estado_user = estado_user;
+		this.pais_user = pais_user;
+		this.telefone_user = telefone_user;
+		this.email_user = email_user;
+		this.senha_user = senha_user;
+		this.avaliacao_user = null;
+		this.permissaoAcesso_user = permissaoAcesso_user;
+		this.permissaoRank_user = permissaoRank_user;
+		this.possuiBike_user = possuiBike_user;
+		this.fotoComprBike_user = fotoComprBike_user;
+	}
+
+	
+	public Usuario() {
+		super();
+	}
+
 	public String getCpfCnpj_user() {
 		return cpfCnpj_user;
 	}
