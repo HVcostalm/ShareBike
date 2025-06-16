@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.com.sharebike.model.Usuario;
-import utils.Conexao;
+import br.com.sharebike.utils.Conexao;
 
 public class UsuarioDAO {
 	

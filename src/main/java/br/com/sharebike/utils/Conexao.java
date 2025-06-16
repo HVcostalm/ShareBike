@@ -1,11 +1,11 @@
-package utils;
+package br.com.sharebike.utils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Conexao {
-	private static final String URL = "jdbc:mysql://localhost:3306/shareBike_20250526";
+	private static final String URL = "jdbc:mysql://localhost:3306/sharebike_20250526";
 	private static final String USUARIO = "root";
 	private static final String SENHA = "<insira a senha de seu user do banco>";
 
