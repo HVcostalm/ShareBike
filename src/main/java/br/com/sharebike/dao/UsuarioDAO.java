@@ -1,20 +1,14 @@
 package br.com.sharebike.dao;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
 import br.com.sharebike.model.Usuario;
 import br.com.sharebike.utils.Conexao;
 
-public class UsuarioDAO {
-	
-	Connection conexao = null;
-    PreparedStatement sql = null;
-    ResultSet rset = null;
-	
+public class UsuarioDAO extends BaseDAO{
+		
     // Função para inserir/cadastrar novos usuarios
 	public int cadastrarUsuario(Usuario usuario) {
 		StringBuilder sqlBuilder = new StringBuilder();
@@ -292,23 +286,5 @@ public class UsuarioDAO {
 	     }
 	     
 	     return usuario;
-	}
-	
-	// Função para fechar a conexão MySQL
-	private void fecharConexao() {
-		try {
-			if (rset != null) {
-				rset.close();
-			}
-			if (sql != null) {
-				sql.close();
-			}
-
-			if (conexao != null) {
-				conexao.close();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 }

@@ -6,9 +6,25 @@ public class Bicicleta {
 	private String chassi_bike;
 	private String estadoConserv_bike;
 	private String tipo_bike;
-	private float avaliacao_bike;
+	private Float avaliacao_bike;
 	private Usuario usuario;
 	
+	public Bicicleta() {
+		super();
+	}
+
+	public Bicicleta(int id_bike, String localEntr_bike, String chassi_bike, String estadoConserv_bike,
+			String tipo_bike, Usuario usuario) {
+		super();
+		this.id_bike = id_bike;
+		this.localEntr_bike = localEntr_bike;
+		this.chassi_bike = chassi_bike;
+		this.estadoConserv_bike = estadoConserv_bike;
+		this.tipo_bike = tipo_bike;
+		this.avaliacao_bike = null;
+		this.usuario = usuario;
+	}
+
 	public int getId_bike() {
 		return id_bike;
 	}
