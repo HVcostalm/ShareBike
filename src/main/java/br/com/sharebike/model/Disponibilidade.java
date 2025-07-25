@@ -23,6 +23,15 @@ public class Disponibilidade {
 		this.disponivel_disp = disponivel_disp;
 		this.bicicleta = bicicleta;
 	}
+	
+	public Disponibilidade(LocalDateTime dataHoraIn_disp, LocalDateTime dataHoraFim_disp, boolean disponivel_disp,
+			Bicicleta bicicleta) {
+		super();
+		this.dataHoraIn_disp = dataHoraIn_disp;
+		this.dataHoraFim_disp = dataHoraFim_disp;
+		this.disponivel_disp = disponivel_disp;
+		this.bicicleta = bicicleta;
+	}
 
 	public int getId_disp() {
 		return id_disp;

@@ -106,6 +106,46 @@ public class BicicletaDAO extends BaseDAO{
         return bike;
     }
 	
+ // Função traz os dados da bike e também carrega o Usuario completo
+ 	public Bicicleta buscarBicicletaComUsuario(int id_bike) {
+ 		String select = "SELECT * FROM Bicicleta WHERE id_bike = ?";
+ 		Bicicleta bike = null;
+
+ 		try {
+ 			conexao = Conexao.getConnection();
+ 			sql = conexao.prepareStatement(select);
+ 			sql.setInt(1, id_bike);
+ 			rset = sql.executeQuery();
+
+ 			if (rset.next()) {
+ 				bike = new Bicicleta();
+
+ 				bike.setId_bike(rset.getInt("id_bike"));
+ 				bike.setNome_bike(rset.getString("nome_bike"));
+                 bike.setFoto_bike(rset.getString("foto_bike"));
+ 				bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
+ 				bike.setChassi_bike(rset.getString("chassi_bike"));
+ 				bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
+ 				bike.setTipo_bike(rset.getString("tipo_bike"));
+ 				bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+
+ 				String cpfCnpjUsuario = rset.getString("Usuario");
+
+ 				// Buscar o usuário completo com UsuarioDAO
+ 				UsuarioDAO usuarioDAO = new UsuarioDAO();
+ 				Usuario usuario = usuarioDAO.exibirUsuario(cpfCnpjUsuario);
+ 				bike.setUsuario(usuario);
+ 			}
+
+ 		} catch (Exception e) {
+ 			e.printStackTrace();
+ 		} finally {
+ 			fecharConexao();
+ 		}
+
+ 		return bike;
+ 	}
+    
 	// Listar todas as bicicletas
 	public List<Bicicleta> listarBicicletas() {
 		String select = "SELECT * FROM Bicicleta";
@@ -142,46 +182,6 @@ public class BicicletaDAO extends BaseDAO{
 		}
 
 		return bicicletas;
-	}
-	
-	// Função traz os dados da bike e também carrega o Usuario completo
-	public Bicicleta buscarBicicletaComUsuario(int id_bike) {
-		String select = "SELECT * FROM Bicicleta WHERE id_bike = ?";
-		Bicicleta bike = null;
-
-		try {
-			conexao = Conexao.getConnection();
-			sql = conexao.prepareStatement(select);
-			sql.setInt(1, id_bike);
-			rset = sql.executeQuery();
-
-			if (rset.next()) {
-				bike = new Bicicleta();
-
-				bike.setId_bike(rset.getInt("id_bike"));
-				bike.setNome_bike(rset.getString("nome_bike"));
-                bike.setFoto_bike(rset.getString("foto_bike"));
-				bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
-				bike.setChassi_bike(rset.getString("chassi_bike"));
-				bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
-				bike.setTipo_bike(rset.getString("tipo_bike"));
-				bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
-
-				String cpfUsuario = rset.getString("Usuario");
-
-				// Buscar o usuário completo com UsuarioDAO
-				UsuarioDAO usuarioDAO = new UsuarioDAO();
-				Usuario usuario = usuarioDAO.exibirUsuario(cpfUsuario);
-				bike.setUsuario(usuario);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			fecharConexao();
-		}
-
-		return bike;
 	}
 
 	// Lista todas as bicicletas associadas a um determinado usuário.
@@ -224,6 +224,81 @@ public class BicicletaDAO extends BaseDAO{
 	    return bicicletas;
 	}
 	
+	public List<Bicicleta> listarBicicletasDisponiveisFiltradas(String cidade, String tipo, String estado, String ordemAvaliacao) {
+	    List<Bicicleta> bicicletas = new ArrayList<>();
+
+	    StringBuilder sqlBuilder = new StringBuilder();
+	    sqlBuilder
+	        .append("SELECT DISTINCT b.* ")
+	        .append("FROM Bicicleta b ")
+	        .append("JOIN Usuario u ON b.Usuario = u.cpfCnpj_user ")
+	        .append("JOIN Disponibilidade d ON b.id_bike = d.Bicicleta ")
+	        .append("WHERE d.disponivel_disp = true ");
+
+	    // Filtros opcionais
+	    if (cidade != null && !cidade.isEmpty()) {
+	        sqlBuilder.append("AND u.cidade_user = ? ");
+	    }
+	    if (tipo != null && !tipo.isEmpty()) {
+	        sqlBuilder.append("AND b.tipo_bike = ? ");
+	    }
+	    if (estado != null && !estado.isEmpty()) {
+	        sqlBuilder.append("AND b.estadoConserv_bike = ? ");
+	    }
+
+	    // Ordenação por avaliação
+	    if ("asc".equalsIgnoreCase(ordemAvaliacao)) {
+	        sqlBuilder.append("ORDER BY b.avaliacao_bike ASC");
+	    } else if ("desc".equalsIgnoreCase(ordemAvaliacao)) {
+	        sqlBuilder.append("ORDER BY b.avaliacao_bike DESC");
+	    }
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(sqlBuilder.toString());
+
+	        int index = 1;
+	        if (cidade != null && !cidade.isEmpty()) {
+	            sql.setString(index++, cidade);
+	        }
+	        if (tipo != null && !tipo.isEmpty()) {
+	            sql.setString(index++, tipo);
+	        }
+	        if (estado != null && !estado.isEmpty()) {
+	            sql.setString(index++, estado);
+	        }
+
+	        rset = sql.executeQuery();
+
+	        while (rset.next()) {
+	            Bicicleta bike = new Bicicleta();
+
+	            bike.setId_bike(rset.getInt("id_bike"));
+	            bike.setNome_bike(rset.getString("nome_bike"));
+	            bike.setFoto_bike(rset.getString("foto_bike"));
+	            bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
+	            bike.setChassi_bike(rset.getString("chassi_bike"));
+	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
+	            bike.setTipo_bike(rset.getString("tipo_bike"));
+	            bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+
+	            Usuario usuario = new Usuario();
+	            usuario.setCpfCnpj_user(rset.getString("Usuario"));
+	            bike.setUsuario(usuario);
+
+	            bicicletas.add(bike);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+
+	    return bicicletas;
+	}
+	
+	/*
 	// Função para aplicar múltiplos filtros  
 	public List<Bicicleta> listarBicicletasFiltradas(String cidade, String tipo, String estado, String ordemAvaliacao) {
 	    List<Bicicleta> bicicletas = new ArrayList<>();
@@ -341,5 +416,5 @@ public class BicicletaDAO extends BaseDAO{
 
 	    return bicicletas;
 	}
-
+	*/
 }

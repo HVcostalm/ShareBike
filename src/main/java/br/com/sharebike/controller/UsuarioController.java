@@ -127,7 +127,40 @@ public class UsuarioController extends HttpServlet{
 		//response.sendRedirect("pages/usuarioDetalhes.jsp");
 
 	}
+	
+	private void exibirUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		String nomeRazaoSocial = request.getParameter("nomeRazaoSocial");
+		List<Usuario> listaUsuario = usuarioDAO.listarUsuario();
+		Usuario usuario = null;
+		
+		// Verificando se a lista tem dados e exibindo no console
+		if (listaUsuario == null || listaUsuario.isEmpty()) {
+			System.out.println("A lista de usuarios está vazia ou nula");
+		} else {
+			System.out.println("Lista de Usuarios Obtida:");
+			for (Usuario usuarioLista : listaUsuario) {
+				if(usuarioLista.getNomeRazaoSocial_user().equalsIgnoreCase(nomeRazaoSocial)) {
+					usuario = usuarioLista;
+					break;
+				}
+			}
+		}
 
+		if(usuario == null) {
+			response.setContentType("text/html; charset=UTF-8");
+			PrintWriter out = response.getWriter();
+			out.println("<script type='text/javascript'>");
+			out.println("alert('Usuario inexistente!');");
+			out.println("</script>");
+			out.close();
+			response.sendRedirect("pages/usuarioDetalhes.jsp");
+		} else {
+			request.setAttribute("Usuario", usuario);
+			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/usuarioDetalhes.jsp");
+			dispatcher.forward(request, response);
+		}
+	}
+	
 	private void aprovarAcessoUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		List<Usuario> listaUsuarioAcesso = usuarioDAO.usuariosParaAprovarAcesso();
 
@@ -162,39 +195,6 @@ public class UsuarioController extends HttpServlet{
 		request.setAttribute("listaUsuarioRank", listaUsuarioRank);
 		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaUsuarioRank.jsp");
 		dispatcher.forward(request, response);
-	}
-
-	private void exibirUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		String nomeRazaoSocial = request.getParameter("nomeRazaoSocial");
-		List<Usuario> listaUsuario = usuarioDAO.listarUsuario();
-		Usuario usuario = new Usuario();
-		
-		// Verificando se a lista tem dados e exibindo no console
-		if (listaUsuario == null || listaUsuario.isEmpty()) {
-			System.out.println("A lista de usuarios está vazia ou nula");
-		} else {
-			System.out.println("Lista de Usuarios Obtida:");
-			for (Usuario usuarioLista : listaUsuario) {
-				if(usuarioLista.getNomeRazaoSocial_user().equalsIgnoreCase(nomeRazaoSocial)) {
-					usuario = usuarioLista;
-					break;
-				}
-			}
-		}
-
-		if(usuario == null) {
-			response.setContentType("text/html; charset=UTF-8");
-			PrintWriter out = response.getWriter();
-			out.println("<script type='text/javascript'>");
-			out.println("alert('Usuario inexistente!');");
-			out.println("</script>");
-			out.close();
-			response.sendRedirect("pages/usuarioDetalhes.jsp");
-		} else {
-			request.setAttribute("Usuario", usuario);
-			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/usuarioDetalhes.jsp");
-			dispatcher.forward(request, response);
-		}
 	}
 
 	private void listarUsuarios(HttpServletRequest request, HttpServletResponse response) throws Exception {

@@ -52,14 +52,14 @@ public class BicicletaController {
 			case "editar":
 				editarBicicleta(request, response);
 				break;
+			case "acessar":
+				exibirBicicleta(request, response);
+				break;
 			case "listar":
 				listarBicicletas(request, response);
 				break;
 			case "lista-disponivel":
-				listarBicicletasDisponiveis(request, response);
-				break;
-			case "lista-usuario":
-				listarBicicletasDisponiveis(request, response);
+				listarBicicletasDisponiveisFiltradas(request, response);
 				break;
 			default:
 				listarBicicletas(request, response);
@@ -98,14 +98,14 @@ public class BicicletaController {
 	}
 
 	private void editarBicicleta(HttpServletRequest request, HttpServletResponse response) throws Exception{
-		int id_bike = Integer.parseInt("id");
+		int id_bike = Integer.parseInt(request.getParameter("id"));
 		String nome_bike = request.getParameter("nome");
 		String foto_bike = request.getParameter("foto");
 		String localEntr_bike = request.getParameter("localEntr");
 		String chassi_bike = request.getParameter("chassi");
 		String estadoConserv_bike = request.getParameter("estadoConserv");
 		String tipo_bike = request.getParameter("tipo");
-		Float avaliacao_bike = Float.parseFloat("avaliacao_bike");
+		Float avaliacao_bike = Float.parseFloat(request.getParameter("avaliacao_bike"));
 		String cpfCnpj_user = request.getParameter("cpfCnpj");
 		
 		Usuario usuario = usuarioDAO.exibirUsuario(cpfCnpj_user);
@@ -125,14 +125,35 @@ public class BicicletaController {
 		//response.sendRedirect("index.jsp");
 	}
 	
+	private void exibirBicicleta(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		int id_bike = Integer.parseInt("id");
+		Bicicleta bicicleta = bicicletaDAO.buscarPorId(id_bike);
+		Usuario usuario = usuarioDAO.exibirUsuario(bicicleta.getUsuario().getCpfCnpj_user());
+		
+		// Atribuindo os objetos à request
+	    request.setAttribute("bicicleta", bicicleta);
+	    request.setAttribute("proprietario", usuario);
+
+	    // Encaminha para a página de exibição detalhada
+	    RequestDispatcher dispatcher = request.getRequestDispatcher("pages/detalhesBicicleta.jsp");
+	    dispatcher.forward(request, response);
+		
+	}
+	
 	private void listarBicicletasUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		String nomeRazaoSocial = request.getParameter("nomeRazaoSocial");
 		List<Usuario> listaUsuario = usuarioDAO.listarUsuario();
-		Usuario usuario = new Usuario();
+		Usuario usuario = null;
 		
 		// Verificando se a lista tem dados e exibindo no console
 		if (listaUsuario == null || listaUsuario.isEmpty()) {
-			System.out.println("A lista de usuarios está vazia ou nula");
+			response.setContentType("text/html; charset=UTF-8");
+			PrintWriter out = response.getWriter();
+			out.println("<script type='text/javascript'>");
+			out.println("alert('A lista de usuarios está vazia ou nula!');");
+			out.println("window.location.href='pages/lista.jsp';");
+			out.println("</script>");
+			out.close();
 		} else {
 			System.out.println("Lista de Usuarios Obtida:");
 			for (Usuario usuarioLista : listaUsuario) {
@@ -143,62 +164,55 @@ public class BicicletaController {
 			}
 		}
 		
-		List<Bicicleta> listaBicicletaUsuario = bicicletaDAO.listarBicicletasPorUsuario(usuario.getCpfCnpj_user());
+		if (usuario != null) {
+	        List<Bicicleta> listaBicicletaUsuario = bicicletaDAO.listarBicicletasPorUsuario(usuario.getCpfCnpj_user());
 
-		// Verificando se a lista tem dados e exibindo no console
-		if (listaBicicletaUsuario == null || listaBicicletaUsuario.isEmpty()) {
-			System.out.println("A lista de bicicletas está vazia ou nula");
-		} else {
-			System.out.println("Lista de Bicicletas Obtida:");
-			for (Bicicleta bicicleta : listaBicicletaUsuario) {
-				System.out.println(bicicleta.exibirDados());
-			}
-		}
-
-		request.setAttribute("listaBicicletaUsuario", listaBicicletaUsuario);
-		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
-		dispatcher.forward(request, response);
+	        if (listaBicicletaUsuario != null && !listaBicicletaUsuario.isEmpty()) {
+	            request.setAttribute("listaBicicletaUsuario", listaBicicletaUsuario);
+	            RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
+	            dispatcher.forward(request, response);
+	        } else {
+	            // Usuário encontrado, mas sem bicicletas
+	            response.setContentType("text/html; charset=UTF-8");
+	            PrintWriter out = response.getWriter();
+	            out.println("<script type='text/javascript'>");
+	            out.println("alert('Usuário encontrado, mas ele não possui bicicletas. Exibindo todas.');");
+	            out.println("window.location.href='Controlador?acao=listarTodasBicicletas';");
+	            out.println("</script>");
+	            out.close();
+	        }
+	    } else {
+	        // Usuário não encontrado
+	        response.setContentType("text/html; charset=UTF-8");
+	        PrintWriter out = response.getWriter();
+	        out.println("<script type='text/javascript'>");
+	        out.println("alert('Usuário não encontrado! Exibindo todas as bicicletas.');");
+	        out.println("window.location.href='Controlador?acao=listarTodasBicicletas';");
+	        out.println("</script>");
+	        out.close();
+	    }
 		
 	}
 	
-	private void listarBicicletasDisponiveis(HttpServletRequest request, HttpServletResponse response) throws Exception{
-		List<Bicicleta> listaBicicletaDisponivel = bicicletaDAO.listarBicicletasComDisponibilidade();
-
-		// Verificando se a lista tem dados e exibindo no console
-		if (listaBicicletaDisponivel == null || listaBicicletaDisponivel.isEmpty()) {
-			System.out.println("A lista de bicicletas está vazia ou nula");
-		} else {
-			System.out.println("Lista de Bicicletas Obtida:");
-			for (Bicicleta bicicleta : listaBicicletaDisponivel) {
-				System.out.println(bicicleta.exibirDados());
-			}
-		}
-
-		request.setAttribute("listaBicicletaDisponivel", listaBicicletaDisponivel);
-		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
-		dispatcher.forward(request, response);
-		
-	}
-	
-	private void listarBicicletasFiltradas(HttpServletRequest request, HttpServletResponse response) throws Exception{
+	private void listarBicicletasDisponiveisFiltradas(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		String cidade = request.getParameter("cidade");
 		String tipo = request.getParameter("tipo");
 		String estadoConserv = request.getParameter("estadoConserv");
 		String ordemAvalicao = request.getParameter("ordemAvalicao");
 		
-		List<Bicicleta> listaBicicletaFiltrada = bicicletaDAO.listarBicicletasFiltradas(cidade, tipo, estadoConserv, ordemAvalicao);
+		List<Bicicleta> listaBicicletaDisponivelFiltrada = bicicletaDAO.listarBicicletasDisponiveisFiltradas(cidade, tipo, estadoConserv, ordemAvalicao);
 
 		// Verificando se a lista tem dados e exibindo no console
-		if (listaBicicletaFiltrada == null || listaBicicletaFiltrada.isEmpty()) {
+		if (listaBicicletaDisponivelFiltrada == null || listaBicicletaDisponivelFiltrada.isEmpty()) {
 			System.out.println("A lista de bicicletas está vazia ou nula");
 		} else {
 			System.out.println("Lista de Bicicletas Obtida:");
-			for (Bicicleta bicicleta : listaBicicletaFiltrada) {
+			for (Bicicleta bicicleta : listaBicicletaDisponivelFiltrada) {
 				System.out.println(bicicleta.exibirDados());
 			}
 		}
 
-		request.setAttribute("listaBicicletaDisponivel", listaBicicletaFiltrada);
+		request.setAttribute("listaBicicletaDisponivelFiltrada", listaBicicletaDisponivelFiltrada);
 		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
 		dispatcher.forward(request, response);
 		

@@ -26,6 +26,17 @@ public class Reserva {
 		this.usuario = usuario;
 		this.bicicleta = bicicleta;
 	}
+	
+	public Reserva(LocalDateTime dataCheckIn_reserv, LocalDateTime dataCheckOut_reserv, String status_reserv,
+			boolean informada_reserv, Usuario usuario, Bicicleta bicicleta) {
+		super();
+		this.dataCheckIn_reserv = dataCheckIn_reserv;
+		this.dataCheckOut_reserv = dataCheckOut_reserv;
+		this.status_reserv = status_reserv;
+		this.informada_reserv = informada_reserv;
+		this.usuario = usuario;
+		this.bicicleta = bicicleta;
+	}
 
 	public int getId_reserv() {
 		return id_reserv;

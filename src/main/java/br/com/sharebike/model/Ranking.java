@@ -25,6 +25,17 @@ public class Ranking {
 		this.pontosSemana_rank = pontosSemana_rank;
 		this.usuario = usuario;
 	}
+	
+	public Ranking(String cidade_rank, String estado_rank, String pais_rank, float pontos_rank, float pontosSemana_rank,
+			Usuario usuario) {
+		super();
+		this.cidade_rank = cidade_rank;
+		this.estado_rank = estado_rank;
+		this.pais_rank = pais_rank;
+		this.pontos_rank = pontos_rank;
+		this.pontosSemana_rank = pontosSemana_rank;
+		this.usuario = usuario;
+	}
 
 	public int getId_rank() {
 		return id_rank;

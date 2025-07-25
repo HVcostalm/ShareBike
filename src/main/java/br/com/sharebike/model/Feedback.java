@@ -41,6 +41,24 @@ public class Feedback {
 		this.avaliado_Usuario = avaliado_Usuario;
 		this.avaliador_Usuario = avaliador_Usuario;
 	}
+	
+	public Feedback(int avaliacaoUser_feedb, int avaliacaoBike_feedb, String obsBike_feedb, String obsUser_feedb,
+			LocalDateTime data_feedb, boolean confComp_feedb, boolean comunicBoa_feedb, boolean funcional_feedb,
+			boolean manutencao_feedb, Reserva reserva, Usuario avaliado_Usuario, Usuario avaliador_Usuario) {
+		super();
+		this.avaliacaoUser_feedb = avaliacaoUser_feedb;
+		this.avaliacaoBike_feedb = avaliacaoBike_feedb;
+		this.obsBike_feedb = obsBike_feedb;
+		this.obsUser_feedb = obsUser_feedb;
+		this.data_feedb = data_feedb;
+		this.confComp_feedb = confComp_feedb;
+		this.comunicBoa_feedb = comunicBoa_feedb;
+		this.funcional_feedb = funcional_feedb;
+		this.manutencao_feedb = manutencao_feedb;
+		this.reserva = reserva;
+		this.avaliado_Usuario = avaliado_Usuario;
+		this.avaliador_Usuario = avaliador_Usuario;
+	}
 
 	public int getId_feedb() {
 		return id_feedb;
