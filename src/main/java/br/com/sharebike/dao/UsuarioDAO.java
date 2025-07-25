@@ -32,11 +32,15 @@ public class UsuarioDAO extends BaseDAO{
 	    	 sql.setString(7, usuario.getTelefone_user());
 	    	 sql.setString(8, usuario.getEmail_user());
 	    	 sql.setString(9, usuario.getSenha_user());
-	    	 sql.setFloat(10, usuario.getAvaliacao_user());
+	    	 sql.setObject(10, null);
 	    	 sql.setBoolean(11, usuario.isPermissaoAcesso_user());
 	    	 sql.setBoolean(12, usuario.isPermissaoRank_user());
 	    	 sql.setBoolean(13, usuario.isPossuiBike_user());
-	    	 sql.setString(14, usuario.getFotoComprBike_user());
+	    	 
+	    	 if(usuario.getFotoComprBike_user().equals(""))
+	    		 sql.setString(14, null);
+	    	 else
+	    		 sql.setString(14, usuario.getFotoComprBike_user());
 	    	 
 	    	 linha = sql.executeUpdate();
 	    	 
@@ -197,7 +201,7 @@ public class UsuarioDAO extends BaseDAO{
 		StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder
                 .append("select * from Usuario ")
-                .append("where fotoComprBike_user is not null"); // Verificar se é isso mesmo
+                .append("where fotoComprBike_user is not null"); // Verificar se é isso mesmo // == ""
         
         String select = sqlBuilder.toString();
 		

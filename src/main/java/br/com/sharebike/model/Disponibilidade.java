@@ -9,6 +9,21 @@ public class Disponibilidade {
 	private boolean disponivel_disp;
 	private Bicicleta bicicleta;
 	
+	
+	public Disponibilidade() {
+		super();
+	}
+
+	public Disponibilidade(int id_disp, LocalDateTime dataHoraIn_disp, LocalDateTime dataHoraFim_disp,
+			boolean disponivel_disp, Bicicleta bicicleta) {
+		super();
+		this.id_disp = id_disp;
+		this.dataHoraIn_disp = dataHoraIn_disp;
+		this.dataHoraFim_disp = dataHoraFim_disp;
+		this.disponivel_disp = disponivel_disp;
+		this.bicicleta = bicicleta;
+	}
+
 	public int getId_disp() {
 		return id_disp;
 	}

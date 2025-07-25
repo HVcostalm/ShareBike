@@ -8,23 +8,25 @@ import br.com.sharebike.model.Usuario;
 import br.com.sharebike.utils.Conexao;
 
 public class BicicletaDAO extends BaseDAO{
-
+	
 	// Cadastrar bicicleta
 	public int cadastrarBicicleta(Bicicleta bicicleta) {
-		String insert = "INSERT INTO Bicicleta(localEntr_bike, chassi_bike, estadoConserv_bike, tipo_bike, avaliacao_bike, Usuario) "
-				+ "VALUES (?, ?, ?, ?, ?, ?)";
+		String insert = "INSERT INTO Bicicleta(nome_bike, foto_bike, localEntr_bike, chassi_bike, estadoConserv_bike, tipo_bike, avaliacao_bike, Usuario)"
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 		int linha = 0;
 
 		try {
 			conexao = Conexao.getConnection();
 			sql = conexao.prepareStatement(insert);
-
-			sql.setString(1, bicicleta.getLocalEntr_bike());
-			sql.setString(2, bicicleta.getChassi_bike());
-			sql.setString(3, bicicleta.getEstadoConserv_bike());
-			sql.setString(4, bicicleta.getTipo_bike());
-			sql.setFloat(5, bicicleta.getAvaliacao_bike());
-			sql.setString(6, bicicleta.getUsuario().getCpfCnpj_user());
+			
+			sql.setString(1, bicicleta.getNome_bike());
+			sql.setString(2, bicicleta.getFoto_bike());
+			sql.setString(3, bicicleta.getLocalEntr_bike());
+			sql.setString(4, bicicleta.getChassi_bike());
+			sql.setString(5, bicicleta.getEstadoConserv_bike());
+			sql.setString(6, bicicleta.getTipo_bike());
+			sql.setObject(7, null);
+			sql.setString(8, bicicleta.getUsuario().getCpfCnpj_user());
 
 			linha = sql.executeUpdate();
 
@@ -39,22 +41,23 @@ public class BicicletaDAO extends BaseDAO{
 
 	// Editar bicicleta
 	public int editarBicicleta(Bicicleta bicicleta) {
-		String update = "UPDATE Bicicleta SET localEntr_bike = ?, chassi_bike = ?, estadoConserv_bike = ?, tipo_bike = ?, avaliacao_bike = ?, Usuario = ? "
+		String update = "UPDATE Bicicleta SET nome_bike = ?, foto_bike = ?, localEntr_bike = ?, chassi_bike = ?, estadoConserv_bike = ?, tipo_bike = ?, avaliacao_bike = ?, Usuario = ? "
 				+ "WHERE id_bike = ?";
 		int linha = 0;
 
 		try {
 			conexao = Conexao.getConnection();
 			sql = conexao.prepareStatement(update);
-
-			sql.setString(1, bicicleta.getLocalEntr_bike());
-			sql.setString(2, bicicleta.getChassi_bike());
-			sql.setString(3, bicicleta.getEstadoConserv_bike());
-			sql.setString(4, bicicleta.getTipo_bike());
-			sql.setFloat(5, bicicleta.getAvaliacao_bike());
-			sql.setString(6, bicicleta.getUsuario().getCpfCnpj_user());
-			sql.setInt(7, bicicleta.getId_bike());
-
+			
+			sql.setString(1, bicicleta.getNome_bike());
+			sql.setString(2, bicicleta.getFoto_bike());
+			sql.setString(3, bicicleta.getLocalEntr_bike());
+			sql.setString(4, bicicleta.getChassi_bike());
+			sql.setString(5, bicicleta.getEstadoConserv_bike());
+			sql.setString(6, bicicleta.getTipo_bike());
+			sql.setFloat(7, bicicleta.getAvaliacao_bike());
+			sql.setString(8, bicicleta.getUsuario().getCpfCnpj_user());
+			sql.setInt(9, bicicleta.getId_bike());
 			linha = sql.executeUpdate();
 
 		} catch (Exception e) {
@@ -81,6 +84,8 @@ public class BicicletaDAO extends BaseDAO{
                 bike = new Bicicleta();
 
                 bike.setId_bike(rset.getInt("id_bike"));
+                bike.setNome_bike(rset.getString("nome_bike"));
+                bike.setFoto_bike(rset.getString("foto_bike"));
                 bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
                 bike.setChassi_bike(rset.getString("chassi_bike"));
                 bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
@@ -115,6 +120,8 @@ public class BicicletaDAO extends BaseDAO{
 				Bicicleta bike = new Bicicleta();
 
 				bike.setId_bike(rset.getInt("id_bike"));
+				bike.setNome_bike(rset.getString("nome_bike"));
+                bike.setFoto_bike(rset.getString("foto_bike"));
 				bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
 				bike.setChassi_bike(rset.getString("chassi_bike"));
 				bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
@@ -152,6 +159,8 @@ public class BicicletaDAO extends BaseDAO{
 				bike = new Bicicleta();
 
 				bike.setId_bike(rset.getInt("id_bike"));
+				bike.setNome_bike(rset.getString("nome_bike"));
+                bike.setFoto_bike(rset.getString("foto_bike"));
 				bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
 				bike.setChassi_bike(rset.getString("chassi_bike"));
 				bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
@@ -191,6 +200,8 @@ public class BicicletaDAO extends BaseDAO{
 	            Bicicleta bike = new Bicicleta();
 
 	            bike.setId_bike(rset.getInt("id_bike"));
+	            bike.setNome_bike(rset.getString("nome_bike"));
+                bike.setFoto_bike(rset.getString("foto_bike"));
 	            bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
@@ -263,6 +274,8 @@ public class BicicletaDAO extends BaseDAO{
 	            Bicicleta bike = new Bicicleta();
 
 	            bike.setId_bike(rset.getInt("id_bike"));
+	            bike.setNome_bike(rset.getString("nome_bike"));
+                bike.setFoto_bike(rset.getString("foto_bike"));
 	            bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
@@ -305,6 +318,8 @@ public class BicicletaDAO extends BaseDAO{
 	            Bicicleta bike = new Bicicleta();
 
 	            bike.setId_bike(rset.getInt("id_bike"));
+	            bike.setNome_bike(rset.getString("nome_bike"));
+                bike.setFoto_bike(rset.getString("foto_bike"));
 	            bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));

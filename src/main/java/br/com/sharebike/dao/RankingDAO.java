@@ -10,6 +10,9 @@ import br.com.sharebike.utils.Conexao;
 
 public class RankingDAO extends BaseDAO{
 	
+	// Zerar pontosSemana no controller (service)
+	// Criar função para zerar pontosSemana
+	
 	// Cadastrar novo ranking
 	public int cadastrarRanking(Ranking ranking) {
 		String insert = """

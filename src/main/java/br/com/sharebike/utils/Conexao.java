@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class Conexao {
 	private static final String URL = "jdbc:mysql://localhost:3306/sharebike_20250526";
 	private static final String USUARIO = "root";
-	private static final String SENHA = "<insira a senha de seu user do banco>";
+	private static final String SENHA = "<insira sua senha aqui>";
 
 	public static Connection getConnection() {
 		try {
@@ -17,21 +17,15 @@ public class Conexao {
 			throw new RuntimeException("Erro na conexão com o banco de dados", e);
 		}
 	}
-	// para testar a conexão após instalar o Apache na maquina e ter criado uma new
-	// server no Eclipse, sem ter implementado código ainda, basta inicar o TomCat
-	// no Eclipse e tirar o comentário abaixo e rodar a classe. Daí, estará
-	// confirmando se a conexão com o banco foi realizada. Só não esquece de iniciar
-	// o serviço do MySQL no services do Windows.
-	/*
-	  public static void main(String[] args) { 
-	  	try { Connection conexao = getConnection(); 
-	  		if (conexao != null)
-	  		{
-	  		System.out.println("Conexão bem-sucedida!"); 
-	  		} 
-	  	} catch (Exception e) { 
-	  		e.printStackTrace(); 
-	  	} 
-	  }
-	 */
+
+	public static void main(String[] args) { 
+		try { Connection conexao = getConnection(); 
+		if (conexao != null)
+		{
+			System.out.println("Conexão bem-sucedida!"); 
+		} 
+		} catch (Exception e) { 
+			e.printStackTrace(); 
+		} 
+	}
 }

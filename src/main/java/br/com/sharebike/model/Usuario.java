@@ -16,9 +16,10 @@ public class Usuario {
 	private boolean possuiBike_user;
 	private String fotoComprBike_user;
 	
+	
 	public Usuario(String cpfCnpj_user, String nomeRazaoSocial_user, String foto_user, String cidade_user,
 			String estado_user, String pais_user, String telefone_user, String email_user, String senha_user,
-			boolean permissaoAcesso_user, boolean permissaoRank_user, boolean possuiBike_user, String fotoComprBike_user) {
+			String fotoComprBike_user) {
 		super();
 		this.cpfCnpj_user = cpfCnpj_user;
 		this.nomeRazaoSocial_user = nomeRazaoSocial_user;
@@ -30,17 +31,54 @@ public class Usuario {
 		this.email_user = email_user;
 		this.senha_user = senha_user;
 		this.avaliacao_user = null;
+		this.permissaoAcesso_user = false;
+		this.permissaoRank_user = false;
+		this.possuiBike_user = false;
+		this.fotoComprBike_user = fotoComprBike_user;
+	}
+	
+	public Usuario(String cpfCnpj_user, String nomeRazaoSocial_user, String foto_user, String cidade_user,
+			String estado_user, String pais_user, String telefone_user, String email_user, String senha_user,
+			Float avaliacao_user, boolean permissaoAcesso_user, boolean permissaoRank_user, boolean possuiBike_user,
+			String fotoComprBike_user) {
+		super();
+		this.cpfCnpj_user = cpfCnpj_user;
+		this.nomeRazaoSocial_user = nomeRazaoSocial_user;
+		this.foto_user = foto_user;
+		this.cidade_user = cidade_user;
+		this.estado_user = estado_user;
+		this.pais_user = pais_user;
+		this.telefone_user = telefone_user;
+		this.email_user = email_user;
+		this.senha_user = senha_user;
+		this.avaliacao_user = avaliacao_user;
 		this.permissaoAcesso_user = permissaoAcesso_user;
 		this.permissaoRank_user = permissaoRank_user;
 		this.possuiBike_user = possuiBike_user;
 		this.fotoComprBike_user = fotoComprBike_user;
 	}
 
-	
 	public Usuario() {
 		super();
 	}
-
+	
+	public String exibirDados() {
+	    return "CPF/CNPJ: " + cpfCnpj_user + 
+	           ", Nome/Razao Social: " + nomeRazaoSocial_user +
+	           ", Foto: " + foto_user +
+	           ", Cidade: " + cidade_user +
+	           ", Estado: " + estado_user +
+	           ", País: " + pais_user +
+	           ", Telefone: " + telefone_user +
+	           ", Email: " + email_user +
+	           ", Senha: " + senha_user +
+	           ", Avaliação: " + avaliacao_user +
+	           ", Permissão Acesso: " + permissaoAcesso_user +
+	           ", Permissão Rank: " + permissaoRank_user +
+	           ", Possui Bike: " + possuiBike_user +
+	           ", Foto Comprovacao Bike: " + fotoComprBike_user;
+	}
+	
 	public String getCpfCnpj_user() {
 		return cpfCnpj_user;
 	}

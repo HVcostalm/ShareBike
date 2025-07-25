@@ -10,6 +10,8 @@ import br.com.sharebike.utils.Conexao;
 
 public class DisponibilidadeDAO extends BaseDAO{
 	
+	// Pensar em função para deixar indisponivel uma data após chegar no dia
+	
 	// Cadastrar nova disponibilidade
     public int cadastrarDisponibilidade(Disponibilidade disponibilidade) {
         String insert = "INSERT INTO Disponibilidade(dataHoraIn_disp, dataHoraFim_disp, disponivel_disp, Bicicleta) VALUES (?, ?, ?, ?)";
@@ -96,6 +98,43 @@ public class DisponibilidadeDAO extends BaseDAO{
     }
     
     // Listar disponibilidades por bicicleta
+    public List<Disponibilidade> listarDisponibilidade() {
+    	String select = "SELECT * FROM Disponibilidade";
+    	List<Disponibilidade> lista = new ArrayList<>();
+
+    	try {
+    		conexao = Conexao.getConnection();
+    		sql = conexao.prepareStatement(select);
+    		rset = sql.executeQuery();
+
+    		while (rset.next()) {
+    			Disponibilidade disp = new Disponibilidade();
+
+    			disp.setId_disp(rset.getInt("id_disp"));
+    			disp.setDataHoraIn_disp(rset.getTimestamp("dataHoraIn_disp").toLocalDateTime());
+    			disp.setDataHoraFim_disp(rset.getTimestamp("dataHoraFim_disp").toLocalDateTime());
+    			disp.setDisponivel_disp(rset.getBoolean("disponivel_disp"));
+    			
+    			
+    			BicicletaDAO bicicletaDAO = new BicicletaDAO();
+    			Bicicleta bicicleta = new Bicicleta();
+    			
+    			bicicleta = bicicletaDAO.buscarPorId(rset.getInt("Bicicleta"));
+    			disp.setBicicleta(bicicleta);
+
+    			lista.add(disp);
+    		}
+
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	} finally {
+    		fecharConexao();
+    	}
+
+    	return lista;
+    }
+    
+    // Listar disponibilidades por bicicleta
     public List<Disponibilidade> listarPorBicicleta(int id_bike) {
     	String select = "SELECT * FROM Disponibilidade WHERE Bicicleta = ?";
     	List<Disponibilidade> lista = new ArrayList<>();
@@ -130,6 +169,22 @@ public class DisponibilidadeDAO extends BaseDAO{
     	return lista;
     }
 	
-    
+
+    public int tornarIndisponivel() { // Por enquanto deixar com o NOW(), se não funcionar vejo depois
+    	String update = "UPDATE Disponibilidade SET disponivel_disp = false WHERE dataHoraIn_disp < NOW()";
+    	int linhasAfetadas = 0;
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(update);
+	        linhasAfetadas = sql.executeUpdate();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+
+	    return linhasAfetadas;
+    }
     
 }
