@@ -149,7 +149,37 @@ public class ReservaDAO extends BaseDAO{
 
         return reservas;
     }
+    
+    public List<Reserva> listarPorLocador(String cpfCnpjLocador) {
+        String select = """
+            SELECT r.* FROM Reserva r
+            INNER JOIN Bicicleta b ON r.Bicicleta = b.id_bike
+            WHERE b.usuario = ?
+        """;
+        
+        List<Reserva> reservas = new ArrayList<>();
 
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(select);
+            sql.setString(1, cpfCnpjLocador);
+            rset = sql.executeQuery();
+
+            while (rset.next()) {
+                reservas.add(montarReserva(rset));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fecharConexao();
+        }
+
+        return reservas;
+    }
+
+    
+    /*
     // Listar reservas por bicicleta
     public List<Reserva> listarPorBicicleta(int id_bike) {
         String select = "SELECT * FROM Reserva WHERE Bicicleta = ?";
@@ -173,6 +203,9 @@ public class ReservaDAO extends BaseDAO{
 
         return reservas;
     }
+    
+    */
+    
     
     // Montar objeto Reserva a partir do ResultSet
     private Reserva montarReserva(ResultSet rset) throws Exception {

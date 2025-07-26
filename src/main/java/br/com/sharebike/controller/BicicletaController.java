@@ -7,7 +7,6 @@ import java.util.List;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -60,6 +59,12 @@ public class BicicletaController {
 				break;
 			case "lista-disponivel":
 				listarBicicletasDisponiveisFiltradas(request, response);
+				break;
+			case "lista-usuario-adm":
+				listarBicicletasUsuarioAdm(request, response);
+				break;
+			case "minhas-bikes":
+				listarBicicletasProprietario(request, response);
 				break;
 			default:
 				listarBicicletas(request, response);
@@ -140,7 +145,29 @@ public class BicicletaController {
 		
 	}
 	
-	private void listarBicicletasUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception{
+	private void listarBicicletasProprietario(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		String cpfCnpj_user = request.getParameter("cpfCnpj");
+		List<Bicicleta> listaBicicletaProprietario = bicicletaDAO.listarBicicletasPorUsuario(cpfCnpj_user);
+		
+		if (listaBicicletaProprietario == null || listaBicicletaProprietario.isEmpty()) {
+			response.setContentType("text/html; charset=UTF-8");
+            PrintWriter out = response.getWriter();
+            out.println("<script type='text/javascript'>");
+            out.println("alert('Sem bicicletas cadastradas');");
+            out.println("window.location.href='pages/lista.jsp';");
+            out.println("</script>");
+            out.close();
+		} else {
+			request.setAttribute("listaBicicletaProprietario", listaBicicletaProprietario);
+			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
+			dispatcher.forward(request, response);
+		}
+
+		
+		
+	}
+	
+	private void listarBicicletasUsuarioAdm(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		String nomeRazaoSocial = request.getParameter("nomeRazaoSocial");
 		List<Usuario> listaUsuario = usuarioDAO.listarUsuario();
 		Usuario usuario = null;
@@ -177,7 +204,7 @@ public class BicicletaController {
 	            PrintWriter out = response.getWriter();
 	            out.println("<script type='text/javascript'>");
 	            out.println("alert('Usuário encontrado, mas ele não possui bicicletas. Exibindo todas.');");
-	            out.println("window.location.href='Controlador?acao=listarTodasBicicletas';");
+	            out.println("window.location.href='pages/lista.jsp';");
 	            out.println("</script>");
 	            out.close();
 	        }
@@ -187,7 +214,7 @@ public class BicicletaController {
 	        PrintWriter out = response.getWriter();
 	        out.println("<script type='text/javascript'>");
 	        out.println("alert('Usuário não encontrado! Exibindo todas as bicicletas.');");
-	        out.println("window.location.href='Controlador?acao=listarTodasBicicletas';");
+	        out.println("window.location.href='pages/lista.jsp';");
 	        out.println("</script>");
 	        out.close();
 	    }

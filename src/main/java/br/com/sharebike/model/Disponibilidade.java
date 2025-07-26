@@ -32,7 +32,15 @@ public class Disponibilidade {
 		this.disponivel_disp = disponivel_disp;
 		this.bicicleta = bicicleta;
 	}
-
+	
+	public String exibirDados() {
+	    return "id: " + id_disp + 
+	    	   ", Data Hora Inicio: " + dataHoraIn_disp +
+	    	   ", Data Hora Fim: " + dataHoraFim_disp +
+	           ", Disponivel: " + disponivel_disp +
+	           ", Bicicleta: " + bicicleta.getNome_bike();
+	}
+	
 	public int getId_disp() {
 		return id_disp;
 	}

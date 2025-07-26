@@ -36,7 +36,17 @@ public class Ranking {
 		this.pontosSemana_rank = pontosSemana_rank;
 		this.usuario = usuario;
 	}
-
+	
+	public String exibirDados() {
+		return "ID: " +id_rank+
+				", Cidade: "+cidade_rank+
+				", Estado: "+estado_rank+
+				", País: " +pais_rank+
+				", Pontos: " +pontos_rank+
+				", Pontos Semana: "+pontosSemana_rank+
+				", Usuario: " +usuario.getNomeRazaoSocial_user();
+	}
+	
 	public int getId_rank() {
 		return id_rank;
 	}

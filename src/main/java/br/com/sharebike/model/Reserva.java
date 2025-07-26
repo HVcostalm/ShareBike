@@ -27,17 +27,27 @@ public class Reserva {
 		this.bicicleta = bicicleta;
 	}
 	
-	public Reserva(LocalDateTime dataCheckIn_reserv, LocalDateTime dataCheckOut_reserv, String status_reserv,
-			boolean informada_reserv, Usuario usuario, Bicicleta bicicleta) {
+	public Reserva(LocalDateTime dataCheckIn_reserv, LocalDateTime dataCheckOut_reserv, Usuario usuario, Bicicleta bicicleta) {
 		super();
 		this.dataCheckIn_reserv = dataCheckIn_reserv;
 		this.dataCheckOut_reserv = dataCheckOut_reserv;
-		this.status_reserv = status_reserv;
-		this.informada_reserv = informada_reserv;
+		this.status_reserv = "PENDENTE";
+		this.informada_reserv = false;
 		this.usuario = usuario;
 		this.bicicleta = bicicleta;
 	}
-
+	
+	public String exibirDados() {
+	    return "id: " + id_reserv + 
+	    	   ", Check Inicio: " + dataCheckIn_reserv +
+	    	   ", Check Fim: " + dataCheckOut_reserv +
+	           ", Status: " + status_reserv +
+	           ", Informada: " + informada_reserv +
+	           ", Locatário: " + usuario.getNomeRazaoSocial_user() +
+	           ", Locador: " + bicicleta.getUsuario().getNomeRazaoSocial_user() +
+	           ", Bicicleta: " + bicicleta.getNome_bike();	
+	}
+	
 	public int getId_reserv() {
 		return id_reserv;
 	}

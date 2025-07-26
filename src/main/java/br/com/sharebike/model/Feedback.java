@@ -59,7 +59,22 @@ public class Feedback {
 		this.avaliado_Usuario = avaliado_Usuario;
 		this.avaliador_Usuario = avaliador_Usuario;
 	}
-
+	
+	public String exibirDados() {
+		return "ID: " + id_feedb +
+				", Avaliacao Usuario: " + avaliacaoUser_feedb +
+				", Avaliacao Bicicleta: " + avaliacaoBike_feedb +
+				", Observações Bicicleta: " + obsBike_feedb +
+				", Observações Usuario: " + obsUser_feedb +
+				", Data: " + data_feedb +
+				", Confortavel Compartilhar: " + confComp_feedb +
+				", Comunicação Boa: " + comunicBoa_feedb +
+				", Funcional: " + funcional_feedb +
+				", Reserva: " + reserva.getId_reserv() +
+				", Avaliado: " + avaliado_Usuario.getNomeRazaoSocial_user() +
+				", Avaliador: " + avaliador_Usuario.getNomeRazaoSocial_user();
+	}
+	
 	public int getId_feedb() {
 		return id_feedb;
 	}

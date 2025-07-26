@@ -144,7 +144,36 @@ public class FeedbackDAO extends BaseDAO{
 
 		return lista;
 	}
+	
+	public List<Feedback> listarFeedbacksPorBicicleta(int id_bike) {
+	    String sqlSelect = """
+	        SELECT f.* FROM Feedback f
+	        INNER JOIN Reserva r ON f.Reserva = r.id_reserv
+	        WHERE r.Bicicleta = ?
+	    """;
 
+	    List<Feedback> feedbacks = new ArrayList<>();
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(sqlSelect);
+	        sql.setInt(1, id_bike);
+	        rset = sql.executeQuery();
+
+	        while (rset.next()) {
+	            feedbacks.add(montarFeedback(rset));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+
+	    return feedbacks;
+	}
+
+	
 	// Montar objeto Feedback
 	private Feedback montarFeedback(ResultSet rset) throws Exception {
 		Feedback fb = new Feedback();
