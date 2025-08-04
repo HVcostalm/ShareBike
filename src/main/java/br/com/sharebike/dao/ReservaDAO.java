@@ -177,6 +177,36 @@ public class ReservaDAO extends BaseDAO{
 
         return reservas;
     }
+    
+	// Função que mostra todas as reservas concluídas que não foram informadas para quantificar ranking pessoal 
+    public List<Reserva> listarReservasFinalizadasNaoInformadasPorUsuario(String cpfCnpj_usuario) {
+        String select = """
+            SELECT * FROM Reserva 
+            WHERE status_reserv = 'finalizada' 
+            AND informada_reserv = false 
+            AND usuario = ?
+        """;
+
+        List<Reserva> reservas = new ArrayList<>();
+
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(select);
+            sql.setString(1, cpfCnpj_usuario);
+            rset = sql.executeQuery();
+
+            while (rset.next()) {
+                reservas.add(montarReserva(rset));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fecharConexao();
+        }
+
+        return reservas;
+    }
 
     
     /*

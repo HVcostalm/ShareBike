@@ -7,6 +7,7 @@ import java.util.List;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -14,9 +15,10 @@ import br.com.sharebike.dao.RankingDAO;
 import br.com.sharebike.dao.UsuarioDAO;
 import br.com.sharebike.model.Ranking;
 import br.com.sharebike.model.Usuario;
+import br.com.sharebike.utils.RankingScheduler;
 
 @WebServlet("/RankingController")
-public class RankingController {
+public class RankingController extends HttpServlet{
 	private static final long serialVersionUID = 1L;
 	private RankingDAO rankingDAO;
 	private UsuarioDAO usuarioDAO;
@@ -24,6 +26,8 @@ public class RankingController {
 	public void init() throws ServletException{
 		try {
 			rankingDAO = new RankingDAO();
+			
+			RankingScheduler.iniciar();
 		} catch (Exception e) {
 			throw new ServletException("Erro ao inicializar RankingDAO", e);
 		}
@@ -49,9 +53,6 @@ public class RankingController {
 				break;
 			case "exibir-ranking-usuario":
 				exibirRankingUsuario(request, response);
-				break;
-			case "resetar-ranking-semana":
-				resetarRankingSemana(request, response);
 				break;
 			case "listar-ranking-filtro":
 				listarRankingsFiltrados(request, response);
@@ -161,9 +162,14 @@ public class RankingController {
 	    }
 	}
 	
-	private void resetarRankingSemana(HttpServletRequest request, HttpServletResponse response) throws Exception{
-		rankingDAO.resetarPontosSemana();
+	/*
+	
+	private void resetarPOntos(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		int linhasAfetadas = rankingDAO.resetarPontosSemana();
+		System.out.println("[RankingScheduler] Reset semanal executado. Linhas afetadas: " + linhasAfetadas);
 	}
+	
+	*/
 	
 	private void listarRankingsFiltrados(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		String cidade_rank = request.getParameter("cidade");

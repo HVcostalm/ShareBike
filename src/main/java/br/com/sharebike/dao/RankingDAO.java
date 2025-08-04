@@ -227,7 +227,10 @@ public class RankingDAO extends BaseDAO{
 
 	    return lista;
 	}
-
+	
+	
+	// Ver como tratar essa função no projeto
+	
 	public int resetarPontosSemana() {
 	    String update = "UPDATE Ranking SET pontosSemana_rank = 0";
 	    int linhasAfetadas = 0;

@@ -7,6 +7,7 @@ import java.util.List;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,7 +17,7 @@ import br.com.sharebike.model.Bicicleta;
 import br.com.sharebike.model.Usuario;
 
 @WebServlet("/BicicletaController")
-public class BicicletaController {
+public class BicicletaController extends HttpServlet{
 
 	// Pensar em função para apenas mostrar as bicicletas que tenham disponibilidade
 	// Pensar em função para deixar indisponivel uma data após chegar no dia

@@ -8,6 +8,7 @@ import java.util.List;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,11 +20,13 @@ import br.com.sharebike.model.Reserva;
 import br.com.sharebike.model.Usuario;
 
 @WebServlet("/ReservaController")
-public class ReservaController {
+public class ReservaController extends HttpServlet{
 	private static final long serialVersionUID = 1L;
 	private ReservaDAO reservaDAO;
 	private BicicletaDAO bicicletaDAO;
 	private UsuarioDAO usuarioDAO;
+	
+	// Ver função em amarelo para listar as reservas para ver o ranking
 	
 	public void init() throws ServletException{
 		try {
@@ -62,6 +65,9 @@ public class ReservaController {
 				break;
 			case "listar-por-locador":
 				listarReservasPorLocador(request, response);
+				break;
+			case "listar-finaliza":
+				listarReservasRanking(request, response);
 				break;
 			default:
 				listarReservas(request, response);
@@ -134,6 +140,26 @@ public class ReservaController {
 		// Encaminha para a página de exibição detalhada
 	    RequestDispatcher dispatcher = request.getRequestDispatcher("pages/detalhReserva.jsp");
 	    dispatcher.forward(request, response);
+	}
+	
+	private void listarReservasRanking(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		String cpfCnpj = request.getParameter("cpfCnpj");
+		
+		List<Reserva> listaReservasFinalizadas = reservaDAO.listarReservasFinalizadasNaoInformadasPorUsuario(cpfCnpj);
+
+		// Verificando se a lista tem dados e exibindo no console
+		if (listaReservasFinalizadas == null || listaReservasFinalizadas.isEmpty()) {
+			System.out.println("A lista de reservas está vazia ou nula");
+		} else {
+			System.out.println("Lista de Reservas Obtida:");
+			for (Reserva reserva : listaReservasFinalizadas) {
+				System.out.println(reserva.exibirDados());
+			}
+		}
+
+		request.setAttribute("listaReservasFinalizadas", listaReservasFinalizadas);
+		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
+		dispatcher.forward(request, response);
 	}
 	
 	private void listarReservasPorLocatario(HttpServletRequest request, HttpServletResponse response) throws Exception{

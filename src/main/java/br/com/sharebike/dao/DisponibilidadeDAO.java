@@ -169,9 +169,11 @@ public class DisponibilidadeDAO extends BaseDAO{
     	return lista;
     }
 	
-
+    
+    // Ver como tratar essa função no projeto
+    
     public int tornarIndisponivel() { // Por enquanto deixar com o NOW(), se não funcionar vejo depois
-    	String update = "UPDATE Disponibilidade SET disponivel_disp = false WHERE dataHoraIn_disp < NOW()";
+    	String update = "UPDATE Disponibilidade SET disponivel_disp = false WHERE DATE_SUB(dataHoraIn_disp, INTERVAL 1 DAY) < NOW()";
     	int linhasAfetadas = 0;
 
 	    try {

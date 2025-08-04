@@ -8,6 +8,7 @@ import java.util.List;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -15,9 +16,10 @@ import br.com.sharebike.dao.BicicletaDAO;
 import br.com.sharebike.dao.DisponibilidadeDAO;
 import br.com.sharebike.model.Bicicleta;
 import br.com.sharebike.model.Disponibilidade;
+import br.com.sharebike.utils.DisponibilidadeScheduler;
 
 @WebServlet("/DisponibilidadeController")
-public class DisponibilidadeController {
+public class DisponibilidadeController extends HttpServlet{
 	
 	private static final long serialVersionUID = 1L;
 	private DisponibilidadeDAO disponibilidadeDAO;
@@ -26,8 +28,10 @@ public class DisponibilidadeController {
 	public void init() throws ServletException{
 		try {
 			disponibilidadeDAO = new DisponibilidadeDAO();
+			
+			DisponibilidadeScheduler.iniciar();
 		} catch (Exception e) {
-			throw new ServletException("Erro ao inicializar DisponibilidadeDAO", e);
+			throw new ServletException("Erro ao inicializar o DisponibilidadeDAO", e);
 		}
 	}
 	
@@ -51,9 +55,6 @@ public class DisponibilidadeController {
 				break;
 			case "exibir":
 				exibirDisponibilidade(request, response);
-				break;
-			case "tornar-indisponivel":
-				tornarDisponibilidadeIndisponivel(request, response);
 				break;
 			case "listar-por-bicicleta":
 				listarDisponibilidadesPorBicicleta(request, response);
@@ -130,12 +131,14 @@ public class DisponibilidadeController {
 	    dispatcher.forward(request, response);
 	}
 	
-	private void tornarDisponibilidadeIndisponivel(HttpServletRequest request, HttpServletResponse response) throws Exception{
-		disponibilidadeDAO.tornarIndisponivel();
-		
-		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
-		dispatcher.forward(request, response);
+	/*
+	
+	private void tornarIndisponiviel(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		int atualizadas = disponibilidadeDAO.tornarIndisponivel();
+        System.out.println("Agendado: " + atualizadas + " disponibilidades tornadas indisponíveis.");
 	}
+	
+	*/
 	
 	private void listarDisponibilidadesPorBicicleta(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		int id_bike = Integer.parseInt(request.getParameter("id_bike"));

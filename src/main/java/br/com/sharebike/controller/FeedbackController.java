@@ -8,6 +8,7 @@ import java.util.List;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,7 +20,7 @@ import br.com.sharebike.model.Reserva;
 import br.com.sharebike.model.Usuario;
 
 @WebServlet("/FeedbackController")
-public class FeedbackController {
+public class FeedbackController extends HttpServlet{
 	private static final long serialVersionUID = 1L;
 	private FeedbackDAO feedbackDAO;
 	private ReservaDAO reservaDAO;

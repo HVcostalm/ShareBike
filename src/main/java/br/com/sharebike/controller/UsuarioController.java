@@ -10,6 +10,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import br.com.sharebike.dao.UsuarioDAO;
 import br.com.sharebike.model.Usuario;
@@ -45,14 +46,20 @@ public class UsuarioController extends HttpServlet{
 			case "editar":
 				editarUsuario(request, response);
 				break;
+			case "exibir":
+				exibirUsuario(request, response);
+				break;
+			case "login":
+				loginUsuario(request, response);
+				break;
+			case "logout":
+				logoutUsuario(request, response);
+				break;
 			case "aprovar-acesso":
 				aprovarAcessoUsuario(request, response);
 				break;
 			case "aprovar-rank":
 				aprovarRankUsuario(request, response);
-				break;
-			case "exibir":
-				exibirUsuario(request, response);
 				break;
 			case "listar":
 				listarUsuarios(request, response);
@@ -159,6 +166,34 @@ public class UsuarioController extends HttpServlet{
 			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/usuarioDetalhes.jsp");
 			dispatcher.forward(request, response);
 		}
+	}
+	
+	private void loginUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		String cpfCnpj = request.getParameter("cpfCnpj");
+		String senha = request.getParameter("senha");
+		
+		Usuario usuario = usuarioDAO.exibirUsuario(cpfCnpj);
+		
+		if(usuario != null && usuario.getSenha_user().equals(senha)) {
+			request.setAttribute("Usuario", usuario);
+			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/usuarioDetalhes.jsp");
+			dispatcher.forward(request, response);
+		}else {
+			response.setContentType("text/html; charset=UTF-8");
+			PrintWriter out = response.getWriter();
+			out.println("<script type='text/javascript'>");
+			out.println("alert('CPF/CNPJ ou senha está inválida!');");
+			out.println("</script>");
+			out.close();
+		}
+	}
+	
+	private void logoutUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		HttpSession session = request.getSession(false);
+		if(session != null) {
+			session.invalidate();
+		}
+		response.sendRedirect("index.jsp");
 	}
 	
 	private void aprovarAcessoUsuario(HttpServletRequest request, HttpServletResponse response) throws Exception {
