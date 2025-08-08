@@ -195,14 +195,37 @@ public class UsuarioDAO extends BaseDAO{
 		return usuarios;
 	}
 	
+	// Atualiza a média de avaliação de um usuário com base nos feedbacks recebidos
+	public void atualizarMediaAvaliacao(String cpfCnpj_user) {
+	    String query = "UPDATE Usuario " +
+	                   "SET avaliacao_user = ( " +
+	                   "    SELECT AVG(avaliacaoUser_feedb) " +
+	                   "    FROM Feedback " +
+	                   "    WHERE Feedback.avaliado_Usuario = ? " +
+	                   ") " +
+	                   "WHERE cpfCnpj_user = ?";
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(query);
+	        sql.setString(1, cpfCnpj_user); // parâmetro do subselect
+	        sql.setString(2, cpfCnpj_user); // parâmetro do where externo
+	        sql.executeUpdate();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+	}
+
+	
 	// Função para mostrar os usuarios que precisam da aprovação do admin para acessarem e usarem o ranking 
-	// com a própria bicicleta
 	public List<Usuario> usuariosParaAprovarRank(){
 		StringBuilder sqlBuilder = new StringBuilder();
         sqlBuilder
                 .append("select * from Usuario ")
-                .append("where fotoComprBike_user is not null"); // Verificar se é isso mesmo // == ""
-        
+                .append("where fotoComprBike_user is not null") // Verificar se é isso mesmo // == ""
+        		.append("AND permissaoRank_user = false");
         String select = sqlBuilder.toString();
 		
 		List<Usuario> usuarios = new ArrayList<Usuario>();
@@ -241,6 +264,58 @@ public class UsuarioDAO extends BaseDAO{
 		}
 		
 		return usuarios;
+	}
+	
+	public void deletarUsuario(String cpfCnpj_user) {
+	    String query = "DELETE FROM Usuario WHERE cpfCnpj_user = ?";
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(query);
+	        sql.setString(1, cpfCnpj_user);
+	        sql.executeUpdate();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+	}
+	
+	// Função para aprovar acesso de um usuário específico
+	public void aprovarAcessoUsuario(String cpfCnpj_user) {
+	    String query = "UPDATE Usuario SET permissaoAcesso_user = true WHERE cpfCnpj_user = ?";
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(query);
+	        sql.setString(1, cpfCnpj_user);
+	        sql.executeUpdate();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+	}
+	
+	// Função para aprovar acesso ao ranking
+	public void aprovarAcessoRanking(String cpfCnpj_user) {
+	    String query = "UPDATE Usuario u " +
+	                   "JOIN ( " +
+	                   "    SELECT DISTINCT Usuario " +
+	                   "    FROM Reserva " +
+	                   "    WHERE status_reserv = 'FINALIZADA' " +
+	                   ") AS locatarios_aptos ON u.cpfCnpj_user = locatarios_aptos.Usuario " +
+	                   "SET u.permissaoRank_user = true " +
+	                   "WHERE u.cpfCnpj_user = ?;";
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(query);
+	        sql.setString(1, cpfCnpj_user);
+	        sql.executeUpdate();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
 	}
 	
 	// Função para encontrar o usuario existente, que  pode servir também para exibir algumas de suas informações

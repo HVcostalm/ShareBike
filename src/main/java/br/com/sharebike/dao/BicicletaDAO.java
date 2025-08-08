@@ -146,6 +146,40 @@ public class BicicletaDAO extends BaseDAO{
  		return bike;
  	}
     
+	// Atualiza a avaliação média da bicicleta com base nas avaliações recebidas nas
+	// reservas
+	public int atualizarAvaliacaoBicicleta(int idBicicleta) {
+		String update = """
+				    UPDATE Bicicleta
+				    SET avaliacao_bike = (
+				        SELECT AVG(f.avaliacaoBike_feedb)
+				        FROM Feedback f
+				        INNER JOIN Reserva r ON f.Reserva = r.id_reserv
+				        WHERE r.Bicicleta = ? AND f.avaliador_Usuario = r.Usuario
+				    )
+				    WHERE id_bike = ?
+				""";
+
+		int linhaAfetada = 0;
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(update);
+			sql.setInt(1, idBicicleta); // para o subselect (r.Bicicleta = ?)
+			sql.setInt(2, idBicicleta); // para o update (where id_bike = ?)
+
+			linhaAfetada = sql.executeUpdate();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return linhaAfetada;
+	}
+
+ 	
 	// Listar todas as bicicletas
 	public List<Bicicleta> listarBicicletas() {
 		String select = "SELECT * FROM Bicicleta";

@@ -64,6 +64,9 @@ public class FeedbackController extends HttpServlet{
 			case "listar-por-bicicleta":
 				listarFeedbacksPorBicicleta(request, response);
 				break;
+			case "listar-para-detalhes":
+				listarFeedbacksUsuarioDetalhes(request, response);
+				break;
 			default:
 				listarFeedbacks(request, response);
 				break;
@@ -120,6 +123,16 @@ public class FeedbackController extends HttpServlet{
 		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/detalhesFeedback.jsp");
 		dispatcher.forward(request, response);
 	}
+	
+	private void listarFeedbacksUsuarioDetalhes(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		String cpfCnpjAvaliado = request.getParameter("cpfCnpjAvaliado");
+		List<Feedback> listaFeedbacksAvaliado = feedbackDAO.listarPorAvaliado(cpfCnpjAvaliado);
+
+		request.setAttribute("listaFeedbacksUsuario", listaFeedbacksAvaliado);
+		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/Perfil.jsp");
+		dispatcher.forward(request, response);
+	}
+
 	
 	private void listarFeedbacksPorAvaliado(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		String cpfCnpjAvaliado = request.getParameter("cpfCnpjAvaliado");

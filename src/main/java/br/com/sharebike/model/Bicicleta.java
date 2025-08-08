@@ -112,7 +112,7 @@ public class Bicicleta {
 		this.tipo_bike = tipo_bike;
 	}
 	
-	public float getAvaliacao_bike() {
+	public Float getAvaliacao_bike() {
 		return avaliacao_bike;
 	}
 	

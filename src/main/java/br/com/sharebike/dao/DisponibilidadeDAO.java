@@ -189,4 +189,55 @@ public class DisponibilidadeDAO extends BaseDAO{
 	    return linhasAfetadas;
     }
     
+    public int tornarIndisponivelSeReservaPendente(int idBicicleta) {
+        String update = "UPDATE Disponibilidade " +
+                        "SET disponivel_disp = false " +
+                        "WHERE Bicicleta = ? " +
+                        "AND EXISTS ( " +
+                        "    SELECT 1 FROM Reserva " +
+                        "    WHERE Reserva.Bicicleta = Disponibilidade.Bicicleta " +
+                        "    AND Reserva.status_reserv = 'PENDENTE' " +
+                        ")";
+        int linhasAfetadas = 0;
+
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(update);
+            sql.setInt(1, idBicicleta);
+            linhasAfetadas = sql.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fecharConexao();
+        }
+
+        return linhasAfetadas;
+    }
+    
+    
+    public int tornarDisponivelSeReservaNegada(int idBicicleta) {
+        String update = "UPDATE Disponibilidade " +
+                        "SET disponivel_disp = true " +
+                        "WHERE Bicicleta = ? " +
+                        "AND EXISTS ( " +
+                        "    SELECT 1 FROM Reserva " +
+                        "    WHERE Reserva.Bicicleta = Disponibilidade.Bicicleta " +
+                        "    AND Reserva.status_reserv = 'NEGADA' " +
+                        ")";
+        int linhasAfetadas = 0;
+
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(update);
+            sql.setInt(1, idBicicleta);
+            linhasAfetadas = sql.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fecharConexao();
+        }
+
+        return linhasAfetadas;
+    }
+
 }

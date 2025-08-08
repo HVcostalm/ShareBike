@@ -151,11 +151,11 @@ public class Usuario {
 		this.senha_user = senha_user;
 	}
 	
-	public float getAvaliacao_user() {
+	public Float getAvaliacao_user() {
 		return avaliacao_user;
 	}
 	
-	public void setAvaliacao_user(float avaliacao_user) {
+	public void setAvaliacao_user(Float avaliacao_user) {
 		this.avaliacao_user = avaliacao_user;
 	}
 	

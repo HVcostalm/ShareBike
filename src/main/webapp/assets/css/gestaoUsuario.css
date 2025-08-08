@@ -1,0 +1,122 @@
+@charset "UTF-8";
+
+/* Estilo para a página gestaoUsuario.jsp */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+}
+
+header {
+    background-color: #343a40;
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+.container {
+    margin: 2rem auto;
+    max-width: 1200px;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nav {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 2rem;
+}
+
+.nav a {
+    text-decoration: none;
+    color: white;
+    background-color: #007bff;
+    padding: 1rem 2rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.nav a:hover {
+    background-color: #0056b3;
+}
+
+.search-bar {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.search-bar input {
+    padding: 0.5rem;
+    width: 300px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+.search-bar button {
+    padding: 0.5rem 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.search-bar button:hover {
+    background-color: #0056b3;
+}
+
+.user-list table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+}
+
+.user-list th, .user-list td {
+    border: 1px solid #dee2e6;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.user-list th {
+    background-color: #f1f1f1;
+}
+
+.user-list a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.user-list a:hover {
+    text-decoration: underline;
+}
+
+.back-button {
+    text-align: center;
+}
+
+.btn-back {
+    text-decoration: none;
+    color: white;
+    background-color: #6c757d;
+    padding: 0.8rem 2rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.btn-back:hover {
+    background-color: #5a6268;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    background-color: #343a40;
+    color: white;
+    bottom: 0;
+    width: 100%;
+}

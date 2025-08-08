@@ -91,6 +91,26 @@ public class ReservaDAO extends BaseDAO{
         return reserva;
     }
     
+    public int atualizarStatusReserva(int idReserva, String novoStatus) {
+        String update = "UPDATE Reserva SET status_reserv = ? WHERE id_reserv = ?";
+        int linhasAfetadas = 0;
+
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(update);
+            sql.setString(1, novoStatus);
+            sql.setInt(2, idReserva);
+            linhasAfetadas = sql.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fecharConexao();
+        }
+
+        return linhasAfetadas;
+    }
+
+    
     // Função que mostra todas as reservas ou por status
     public List<Reserva> listarReservasPorStatus(String status) {
         StringBuilder sqlBuilder = new StringBuilder();
