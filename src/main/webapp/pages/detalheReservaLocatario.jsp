@@ -796,17 +796,18 @@ Usuario locador = bicicleta.getUsuario();
             </form>
             <%}%>
             
+            <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas" class="btn btn-secondary">
+                <i class="fas fa-list"></i>
+                Ver Todas as Reservas
+            </a>
+            
             <%if("FINALIZADA".equals(reserva.getStatus_reserv())){%>
-            <a href="<%=request.getContextPath()%>/FeedbackController?action=pagina-locatario&reservaId=<%=reserva.getId_reserv()%>" class="btn btn-success">
+            <a href="<%=request.getContextPath()%>/FeedbackController?action=fazer-avaliacao&reservaId=<%=reserva.getId_reserv()%>" class="btn btn-success">
                 <i class="fas fa-star"></i>
                 Avaliar Experiência
             </a>
             <%}%>
             
-            <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas" class="btn btn-secondary">
-                <i class="fas fa-list"></i>
-                Ver Todas as Reservas
-            </a>
         </div>
     </div>
 
