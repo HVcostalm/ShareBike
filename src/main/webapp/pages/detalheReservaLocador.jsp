@@ -765,7 +765,7 @@ LocalDateTime agora = LocalDateTime.now();
                     <input type="hidden" name="action" value="editar">
                     <input type="hidden" name="id_reserv" value="<%= reserva.getId_reserv() %>">
                     <input type="hidden" name="status_reserv" value="NEGADA">
-                    <button type="submit" class="btn btn-warning" onclick="return confirm('Tem certeza que deseja cancelar esta reserva confirmada?\n\nO locatário será avisado sobre o cancelamento.')">>
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Tem certeza que deseja cancelar esta reserva confirmada?')">
                         <i class="fas fa-ban"></i>
                         Cancelar Reserva
                     </button>

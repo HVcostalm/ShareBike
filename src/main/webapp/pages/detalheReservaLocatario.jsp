@@ -818,9 +818,9 @@ Usuario locador = bicicleta.getUsuario();
         function confirmarCancelamento(tipo) {
             let mensagem = '';
             if (tipo === 'negar') {
-                mensagem = 'Tem certeza que deseja cancelar esta solicitação de reserva?\n\nO locador será avisado sobre o cancelamento.';
+                mensagem = 'Tem certeza que deseja cancelar esta solicitação de reserva?';
             } else {
-                mensagem = 'Tem certeza que deseja cancelar esta reserva confirmada?\n\nO locador será avisado sobre o cancelamento.';
+                mensagem = 'Tem certeza que deseja cancelar esta reserva confirmada?';
             }
             
             if (confirm(mensagem)) {

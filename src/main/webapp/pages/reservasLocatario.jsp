@@ -188,7 +188,7 @@ if (todasReservas == null) {
         /* Centralização forçada da navegação */
         .nav {
             background: white;
-            padding: 15px;
+            padding: 10px 0px;
             border-radius: 10px;
             margin-bottom: 30px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
