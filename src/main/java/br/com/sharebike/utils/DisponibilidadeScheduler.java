@@ -23,4 +23,13 @@ public class DisponibilidadeScheduler {
         // Executar a cada 1 hora, com 0 de delay inicial
         scheduler.scheduleAtFixedRate(tarefa, 0, 1, TimeUnit.HOURS);
     }
+    
+    public static void parar() {
+        try {
+            scheduler.shutdownNow();
+            System.out.println("[DisponibilidadeScheduler] Scheduler parado.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

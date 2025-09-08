@@ -1,6 +1,6 @@
 @charset "UTF-8";
 
-/* Estilo para páginas de bicicletas */
+/* Estilo para páginas de bicicletas - Cores Padrão ShareBike */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -9,7 +9,7 @@ body {
 }
 
 header {
-    background-color: #38b2ac;
+    background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
     color: white;
     padding: 1.5rem;
     text-align: center;
@@ -35,7 +35,7 @@ header {
 .nav a {
     text-decoration: none;
     color: white;
-    background-color: #007bff;
+    background-color: #38b2ac;
     padding: 1rem 2rem;
     border-radius: 5px;
     transition: background-color 0.3s;
@@ -43,7 +43,7 @@ header {
 }
 
 .nav a:hover {
-    background-color: #0056b3;
+    background-color: #0d9488;
 }
 
 .bike-grid {
@@ -90,6 +90,19 @@ header {
 .bike-rating {
     color: #ffc107;
     margin-bottom: 1rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bike-rating .fas.fa-star,
+.bike-rating .fas.fa-star-half-alt {
+    color: #ffc107;
+}
+
+.bike-rating .far.fa-star {
+    color: #ddd;
 }
 
 .bike-status {
@@ -135,39 +148,39 @@ header {
 }
 
 .btn-primary {
-    background-color: #007bff;
+    background-color: #38b2ac;
     color: white;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: #0d9488;
 }
 
 .btn-success {
-    background-color: #28a745;
+    background-color: #047857;
     color: white;
 }
 
 .btn-success:hover {
-    background-color: #1e7e34;
+    background-color: #064e3b;
 }
 
 .btn-warning {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: #d97706;
+    color: white;
 }
 
 .btn-warning:hover {
-    background-color: #e0a800;
+    background-color: #b45309;
 }
 
 .btn-info {
-    background-color: #17a2b8;
+    background-color: #0891b2;
     color: white;
 }
 
 .btn-info:hover {
-    background-color: #138496;
+    background-color: #0e7490;
 }
 
 .search-filter {
@@ -223,7 +236,7 @@ header {
 
 .btn-back {
     padding: 0.8rem 2rem;
-    background-color: #6c757d;
+    background-color: #374151;
     color: white;
     text-decoration: none;
     border-radius: 5px;
@@ -231,11 +244,11 @@ header {
 }
 
 .btn-back:hover {
-    background-color: #545b62;
+    background-color: #1f2937;
 }
 
 footer {
-    background-color: #343a40;
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
     color: white;
     text-align: center;
     padding: 1rem;

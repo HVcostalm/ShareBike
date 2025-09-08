@@ -229,7 +229,6 @@ public class ReservaDAO extends BaseDAO{
     }
 
     
-    /*
     // Listar reservas por bicicleta
     public List<Reserva> listarPorBicicleta(int id_bike) {
         String select = "SELECT * FROM Reserva WHERE Bicicleta = ?";
@@ -254,8 +253,75 @@ public class ReservaDAO extends BaseDAO{
         return reservas;
     }
     
-    */
     
+    // Método para verificar se o usuário tem reservas finalizadas (para permissão de acesso ao ranking)
+    public boolean usuarioTemReservasFinalizada(String cpfCnpj_usuario) {
+        String select = """
+            SELECT COUNT(*) as total FROM Reserva 
+            WHERE status_reserv = 'FINALIZADA' 
+            AND usuario = ?
+        """;
+        
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(select);
+            sql.setString(1, cpfCnpj_usuario);
+            rset = sql.executeQuery();
+            
+            if (rset.next()) {
+                return rset.getInt("total") > 0;
+            }
+        } catch (Exception e) {
+            System.out.println("Erro ao verificar reservas finalizadas: " + e.getMessage());
+        } finally {
+            fecharConexao();
+        }
+        
+        return false;
+    }
+    
+    // Método para atualizar o status informada_reserv de uma reserva
+    public boolean atualizarInformadaReserva(int idReserva) {
+        String update = "UPDATE Reserva SET informada_reserv = true WHERE id_reserv = ?";
+        
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(update);
+            sql.setInt(1, idReserva);
+            
+            int linhasAfetadas = sql.executeUpdate();
+            return linhasAfetadas > 0;
+            
+        } catch (Exception e) {
+            System.out.println("Erro ao atualizar informada_reserv: " + e.getMessage());
+            return false;
+        } finally {
+            fecharConexao();
+        }
+    }
+    
+	// Contar reservas finalizadas para estatísticas
+	public int contarReservasFinalizadas() {
+		String query = "SELECT COUNT(*) FROM Reserva WHERE status_reserv = 'FINALIZADA'";
+		int count = 0;
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(query);
+			ResultSet resultado = sql.executeQuery();
+
+			if (resultado.next()) {
+				count = resultado.getInt(1);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return count;
+	}
     
     // Montar objeto Reserva a partir do ResultSet
     private Reserva montarReserva(ResultSet rset) throws Exception {
@@ -267,14 +333,24 @@ public class ReservaDAO extends BaseDAO{
     	reserva.setStatus_reserv(rset.getString("status_reserv"));
     	reserva.setInformada_reserv(rset.getBoolean("informada_reserv"));
 
-    	Usuario usuario = new Usuario();
-    	usuario.setCpfCnpj_user(rset.getString("Usuario"));
-    	reserva.setUsuario(usuario);
+    	// Buscar dados completos do usuário
+    	UsuarioDAO usuarioDAO = new UsuarioDAO();
+    	String cpfUsuario = rset.getString("Usuario");
+    	if (cpfUsuario != null) {
+    		Usuario usuario = usuarioDAO.exibirUsuario(cpfUsuario);
+    		reserva.setUsuario(usuario);
+    	}
 
-    	Bicicleta bicicleta = new Bicicleta();
-    	bicicleta.setId_bike(rset.getInt("Bicicleta"));
-    	reserva.setBicicleta(bicicleta);
+    	// Buscar dados completos da bicicleta
+    	BicicletaDAO bicicletaDAO = new BicicletaDAO();
+    	int idBicicleta = rset.getInt("Bicicleta");
+    	if (idBicicleta > 0) {
+    		Bicicleta bicicleta = bicicletaDAO.buscarBicicletaComUsuario(idBicicleta);
+    		reserva.setBicicleta(bicicleta);
+    	}
 
     	return reserva;
     }
+    
+    
 }

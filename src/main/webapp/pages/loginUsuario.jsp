@@ -7,23 +7,23 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" type="text/css" media="all">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-  footer {
-    text-align: center;
-    padding: 1rem;
-    background-color: #343a40;
-    color: white;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-}
-  </style>
+	footer {
+		text-align: center;
+		padding: 1rem;
+		background-color: #343a40;
+		color: white;
+		position: fixed;
+		bottom: 0;
+		width: 100%;
+	}
+</style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
 
   <!-- Navbar -->
   <nav class="bg-white shadow-md sticky top-0 z-40">
     <div class="container mx-auto px-4 py-3 flex items-center space-x-2">
-      <a href="../index.jsp" class="flex items-center space-x-2">
+      <a href="<%=request.getContextPath()%>/index.jsp" class="flex items-center space-x-2">
         <i class="fas fa-bicycle text-teal-600 text-2xl"></i>
         <span class="text-xl font-bold text-teal-800">ShareBike</span>
       </a>
@@ -31,11 +31,20 @@
   </nav>
 
   <!-- Main content: centralizado -->
-  <main class="flex-grow flex items-center justify-center p-6">
+  <main class="flex-grow flex items-center justify-center p-6 pb-24">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
       <h1 class="text-2xl font-bold mb-6 text-teal-700 text-center">Login ShareBike</h1>
-
-      <form action="../UsuarioController" method="post" class="space-y-4">
+	  
+	  <!-- Mensagem de erro -->
+    	<% String mensagemErro = (String) request.getAttribute("mensagemErro"); %>
+    	<% if (mensagemErro != null) { %>
+      	<div class="bg-red-100 text-red-700 border border-red-400 px-4 py-2 rounded mb-4">
+        	<%= mensagemErro %>
+      	</div>
+    	<% } %>
+	  
+	  
+      <form action="${pageContext.request.contextPath}/UsuarioController" method="post" class="space-y-4">
         <input type="hidden" name="action" value="login" />
 
         <div>
@@ -73,7 +82,7 @@
 
       <p class="mt-4 text-center text-gray-600">
         Não tem uma conta?
-        <a href="cadastroUsuario.jsp" class="text-teal-600 hover:underline">Cadastre-se aqui</a>
+        <a href="<%=request.getContextPath()%>/pages/cadastroUsuario.jsp" class="text-teal-600 hover:underline">Cadastre-se aqui</a>
       </p>
     </div>
   </main>

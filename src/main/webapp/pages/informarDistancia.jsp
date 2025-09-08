@@ -1,11 +1,48 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="java.util.*" %>
+<%@ page import="br.com.sharebike.model.*" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.time.LocalDate" %>
+<%@ page import="java.io.File" %>
+<%
+    // Verificar se o usuário está logado
+    Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+    if (usuarioLogado == null) {
+        response.sendRedirect(request.getContextPath() + "/pages/loginUsuario.jsp");
+        return;
+    }
+    
+    // Verificar se já informou bike própria hoje
+    boolean jaInformouBikePropriaHoje = false;
+    if (usuarioLogado.isPossuiBike_user()) {
+        String nomeArquivo = "bike_propria_" + usuarioLogado.getCpfCnpj_user() + "_" + LocalDate.now().toString() + ".tmp";
+        String caminhoTemp = System.getProperty("java.io.tmpdir");
+        File arquivoControle = new File(caminhoTemp, nomeArquivo);
+        jaInformouBikePropriaHoje = arquivoControle.exists();
+    }
+    
+    // Buscar dados do controller
+    List<Reserva> reservasNaoInformadas = (List<Reserva>) request.getAttribute("reservasNaoInformadas");
+    String mensagemSucesso = (String) request.getAttribute("sucesso");
+    String mensagemErro = (String) request.getAttribute("erro");
+    
+    // Se não há dados carregados, redirecionar para o controller
+    if (reservasNaoInformadas == null) {
+        response.sendRedirect(request.getContextPath() + "/RankingController?action=informar-distancia");
+        return;
+    }
+    
+    // Formatador de data
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+%>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Informar Distância - ShareBike</title>
-    <link rel="stylesheet" href="../assets/css/usuarioDetalhes.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/usuarioDetalhes.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -29,8 +66,8 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            color: #212529;
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%) !important;
+            color: #fff;
             padding: 2rem;
             border-radius: 15px;
             margin-bottom: 2rem;
@@ -47,7 +84,7 @@
 
         .back-link {
             background: rgba(255,255,255,0.2);
-            color: #212529;
+            color: #fff;
             padding: 0.5rem 1rem;
             border-radius: 8px;
             text-decoration: none;
@@ -86,21 +123,13 @@
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            border-left: 4px solid #ffc107;
+            border-left: 4px solid #28a745;
             transition: all 0.3s ease;
         }
 
         .reservation-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .reservation-card.completed {
-            border-left-color: #28a745;
-        }
-
-        .reservation-card.pending {
-            border-left-color: #6c757d;
         }
 
         .reservation-header {
@@ -122,14 +151,6 @@
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
-        }
-
-        .status-finalizada {
-            background: #d4edda;
-            color: #28a745;
-        }
-
-        .status-pendente {
             background: #fff3cd;
             color: #856404;
         }
@@ -201,6 +222,7 @@
             padding: 1rem;
             margin-top: 1rem;
             text-align: center;
+            display: none;
         }
 
         .points-display {
@@ -248,6 +270,16 @@
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            background: #6c757d !important;
+        }
+        
+        .btn:not(:disabled) {
+            opacity: 1 !important;
+            cursor: pointer !important;
+        }
+        
+        .btn-success:not(:disabled) {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
         }
 
         .action-buttons {
@@ -277,39 +309,6 @@
             background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
-        }
-
-        .stats-summary {
-            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-            border-radius: 15px;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .stat-item {
-            background: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffc107;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #6c757d;
-            font-weight: 500;
         }
 
         .bike-info {
@@ -353,10 +352,6 @@
                 grid-template-columns: 1fr;
             }
             
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
             .action-buttons {
                 flex-direction: column;
             }
@@ -367,7 +362,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <a href="rankingLocatario.jsp" class="back-link">
+            <a href="<%=request.getContextPath()%>/RankingController?action=pagina-locatario" class="back-link">
                 <i class="fas fa-arrow-left"></i> Voltar ao Ranking
             </a>
             
@@ -378,28 +373,23 @@
             <p>Ganhe pontos no ranking informando a distância das suas viagens!</p>
         </div>
 
-        <!-- Estatísticas Gerais -->
-        <div class="stats-summary">
-            <h3><i class="fas fa-chart-line"></i> Suas Estatísticas de Pontos</h3>
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-number">1,247</div>
-                    <div class="stat-label">Pontos Totais</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">1,247</div>
-                    <div class="stat-label">Km Percorridos</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">23</div>
-                    <div class="stat-label">Viagens Completadas</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">12º</div>
-                    <div class="stat-label">Posição no Ranking</div>
-                </div>
-            </div>
+        <!-- Mensagens de Sucesso/Erro -->
+        <% String sucesso = (String) request.getAttribute("sucesso"); %>
+        <% String erro = (String) request.getAttribute("erro"); %>
+        
+        <% if (sucesso != null) { %>
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <%= sucesso %>
         </div>
+        <% } %>
+        
+        <% if (erro != null) { %>
+        <div class="alert alert-danger" style="background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <%= erro %>
+        </div>
+        <% } %>
 
         <!-- Informações sobre Pontuação -->
         <div class="card">
@@ -410,20 +400,77 @@
             
             <div class="alert alert-info">
                 <i class="fas fa-trophy"></i>
-                <span>Para cada <strong>1 km percorrido</strong>, você ganha <strong>1 ponto</strong> no ranking!</span>
+                <span>Para cada <strong>1 km percorrido</strong>, você ganha <strong>1 ponto</strong> no ranking! <strong>Máximo 10 km por viagem.</strong></span>
             </div>
             
             <div style="background: #f8f9fa; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
                 <h4><i class="fas fa-lightbulb"></i> Dicas para Maximizar seus Pontos:</h4>
                 <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li><strong>Limite de 10 km por viagem</strong> - mais que isso não é prático de bicicleta</li>
                     <li>Informe a distância real percorrida para garantir pontos justos</li>
                     <li>Complete mais viagens para subir no ranking</li>
-                    <li>Mantenha uma boa avaliação para ser um locatário preferencial</li>
-                    <li>Use aplicativos de rastreamento para medir distâncias precisas</li>
                 </ul>
             </div>
         </div>
-
+		
+		        <!-- Verificação de Bike Própria -->
+        <% if (usuarioLogado.isPossuiBike_user()) { %>
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-bicycle"></i>
+                Informar Viagem com Minha Bike
+            </div>
+            
+            <% if (jaInformouBikePropriaHoje) { %>
+                <!-- Já informou hoje - mostrar aviso -->
+                <div class="bike-info" style="background: #fff3cd; border: 2px solid #ffc107;">
+                    <div class="bike-icon" style="background: #ffc107;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <strong>Limite diário atingido!</strong><br>
+                        <small>Você já informou uma distância com sua bike hoje. Próxima submissão permitida: <strong>amanhã às 00:00</strong></small>
+                    </div>
+                </div>
+                
+                <div style="background: #fff3cd; border-radius: 8px; padding: 1rem; margin-top: 1rem; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; color: #856404;">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Política de uso:</strong> Para manter a integridade do ranking, usuários com bike própria podem informar distância apenas <strong>1 vez por dia</strong>.
+                    </p>
+                </div>
+                
+                <button class="btn btn-secondary" disabled style="margin-top: 1rem; opacity: 0.6;">
+                    <i class="fas fa-ban"></i>
+                    Já Informado Hoje
+                </button>
+            <% } else { %>
+                <!-- Pode informar hoje - mostrar normal -->
+                <div class="bike-info" style="background: #e8f5e8; border: 2px solid #28a745;">
+                    <div class="bike-icon" style="background: #28a745;">
+                        <i class="fas fa-bicycle"></i>
+                    </div>
+                    <div>
+                        <strong>Você possui sua própria bicicleta!</strong><br>
+                        <small>Informe distâncias percorridas com sua bike e ganhe pontos também</small>
+                    </div>
+                </div>
+                
+                <div style="background: #e6fffa; border-radius: 8px; padding: 1rem; margin-top: 1rem; border-left: 4px solid #38b2ac;">
+                    <p style="margin: 0; color: #065f46;">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Disponível hoje:</strong> Você pode informar <strong>1 distância</strong> com sua bike própria hoje. Use com responsabilidade!
+                    </p>
+                </div>
+                
+                <button class="btn btn-success" onclick="abrirModalBikePropria()" style="margin-top: 1rem;">
+                    <i class="fas fa-plus-circle"></i>
+                    Informar Distância com Minha Bike
+                </button>
+            <% } %>
+        </div>
+        <% } %>
+		
         <!-- Lista de Reservas Finalizadas -->
         <div class="card">
             <div class="card-title">
@@ -431,302 +478,347 @@
                 Reservas Finalizadas - Aguardando Informação de Distância
             </div>
             
-            <!-- Reserva 1 -->
-            <div class="reservation-card completed" id="reserva-001">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-004</div>
-                    <div class="status-badge status-pendente">
-                        <i class="fas fa-clock"></i> Aguardando Distância
-                    </div>
-                </div>
+            <% if (reservasNaoInformadas != null && !reservasNaoInformadas.isEmpty()) { %>
+                <% for (int i = 0; i < reservasNaoInformadas.size(); i++) { 
+                    Reserva reserva = reservasNaoInformadas.get(i);
+                %>
                 
-                <div class="bike-info">
-                    <div class="bike-icon">
-                        <i class="fas fa-bicycle"></i>
-                    </div>
-                    <div>
-                        <strong>Speed Pro 2024</strong><br>
-                        <small><i class="fas fa-user"></i> Locador: Maria Costa</small>
-                    </div>
-                </div>
-                
-                <div class="reservation-info">
-                    <div class="info-item">
-                        <span class="info-label">Data da Viagem</span>
-                        <span class="info-value">03/08 - 05/08/2025</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Duração</span>
-                        <span class="info-value">2 dias (48 horas)</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Finalizada em</span>
-                        <span class="info-value">05/08/2025 17:00</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Status</span>
-                        <span class="info-value">Devolvida com sucesso</span>
-                    </div>
-                </div>
-                
-                <div class="distance-form">
-                    <h4><i class="fas fa-route"></i> Informar Distância Percorrida</h4>
-                    <div class="form-group">
-                        <label for="distance-001">
-                            <i class="fas fa-road"></i>
-                            Distância Total (em km):
-                        </label>
-                        <input type="number" 
-                               id="distance-001" 
-                               min="0" 
-                               max="1000" 
-                               step="0.1" 
-                               placeholder="Ex: 45.5"
-                               oninput="calculatePoints('001')"
-                               style="margin-bottom: 1rem;">
-                        
-                        <div class="points-calculator" id="calculator-001" style="display: none;">
-                            <div><i class="fas fa-calculator"></i> Pontos que você ganhará:</div>
-                            <div class="points-display" id="points-001">0</div>
-                            <div>pontos</div>
+                <div class="reservation-card">
+                    <div class="reservation-header">
+                        <div class="reservation-id">#RSV-<%= String.format("%03d", reserva.getId_reserv()) %></div>
+                        <div class="status-badge">
+                            <i class="fas fa-clock"></i> Aguardando Distância
                         </div>
                     </div>
                     
-                    <button class="btn btn-success" 
-                            onclick="submitDistance('001')" 
-                            id="submit-001"
-                            disabled>
-                        <i class="fas fa-check"></i>
-                        Confirmar Distância
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Reserva 2 -->
-            <div class="reservation-card completed" id="reserva-002">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-005</div>
-                    <div class="status-badge status-pendente">
-                        <i class="fas fa-clock"></i> Aguardando Distância
-                    </div>
-                </div>
-                
-                <div class="bike-info">
-                    <div class="bike-icon">
-                        <i class="fas fa-bicycle"></i>
-                    </div>
-                    <div>
-                        <strong>Urbana City UB-2024</strong><br>
-                        <small><i class="fas fa-user"></i> Locador: Pedro Santos</small>
-                    </div>
-                </div>
-                
-                <div class="reservation-info">
-                    <div class="info-item">
-                        <span class="info-label">Data da Viagem</span>
-                        <span class="info-value">31/07 - 01/08/2025</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Duração</span>
-                        <span class="info-value">1 dia (24 horas)</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Finalizada em</span>
-                        <span class="info-value">01/08/2025 18:30</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Status</span>
-                        <span class="info-value">Devolvida com sucesso</span>
-                    </div>
-                </div>
-                
-                <div class="distance-form">
-                    <h4><i class="fas fa-route"></i> Informar Distância Percorrida</h4>
-                    <div class="form-group">
-                        <label for="distance-002">
-                            <i class="fas fa-road"></i>
-                            Distância Total (em km):
-                        </label>
-                        <input type="number" 
-                               id="distance-002" 
-                               min="0" 
-                               max="1000" 
-                               step="0.1" 
-                               placeholder="Ex: 22.3"
-                               oninput="calculatePoints('002')"
-                               style="margin-bottom: 1rem;">
-                        
-                        <div class="points-calculator" id="calculator-002" style="display: none;">
-                            <div><i class="fas fa-calculator"></i> Pontos que você ganhará:</div>
-                            <div class="points-display" id="points-002">0</div>
-                            <div>pontos</div>
+                    <div class="bike-info">
+                        <div class="bike-icon">
+                            <i class="fas fa-bicycle"></i>
+                        </div>
+                        <div>
+                            <strong><%= reserva.getBicicleta().getNome_bike() %></strong><br>
+                            <small><i class="fas fa-user"></i> Locador: <%= reserva.getBicicleta().getUsuario().getNomeRazaoSocial_user() %></small>
                         </div>
                     </div>
                     
-                    <button class="btn btn-success" 
-                            onclick="submitDistance('002')" 
-                            id="submit-002"
-                            disabled>
-                        <i class="fas fa-check"></i>
-                        Confirmar Distância
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Reserva 3 -->
-            <div class="reservation-card completed" id="reserva-003">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-006</div>
-                    <div class="status-badge status-pendente">
-                        <i class="fas fa-clock"></i> Aguardando Distância
-                    </div>
-                </div>
-                
-                <div class="bike-info">
-                    <div class="bike-icon">
-                        <i class="fas fa-bicycle"></i>
-                    </div>
-                    <div>
-                        <strong>Mountain Explorer MX-2024</strong><br>
-                        <small><i class="fas fa-user"></i> Locador: Ana Silva</small>
-                    </div>
-                </div>
-                
-                <div class="reservation-info">
-                    <div class="info-item">
-                        <span class="info-label">Data da Viagem</span>
-                        <span class="info-value">28/07/2025</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Duração</span>
-                        <span class="info-value">8 horas</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Finalizada em</span>
-                        <span class="info-value">28/07/2025 18:00</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Status</span>
-                        <span class="info-value">Devolvida com sucesso</span>
-                    </div>
-                </div>
-                
-                <div class="distance-form">
-                    <h4><i class="fas fa-route"></i> Informar Distância Percorrida</h4>
-                    <div class="form-group">
-                        <label for="distance-003">
-                            <i class="fas fa-road"></i>
-                            Distância Total (em km):
-                        </label>
-                        <input type="number" 
-                               id="distance-003" 
-                               min="0" 
-                               max="1000" 
-                               step="0.1" 
-                               placeholder="Ex: 67.8"
-                               oninput="calculatePoints('003')"
-                               style="margin-bottom: 1rem;">
-                        
-                        <div class="points-calculator" id="calculator-003" style="display: none;">
-                            <div><i class="fas fa-calculator"></i> Pontos que você ganhará:</div>
-                            <div class="points-display" id="points-003">0</div>
-                            <div>pontos</div>
+                    <div class="reservation-info">
+                        <div class="info-item">
+                            <span class="info-label">Data da Viagem</span>
+                            <span class="info-value">
+                                <%= reserva.getDataCheckIn_reserv().format(dateFormatter) %> - 
+                                <%= reserva.getDataCheckOut_reserv().format(dateFormatter) %>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Check-out</span>
+                            <span class="info-value"><%= reserva.getDataCheckOut_reserv().format(formatter) %></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Status</span>
+                            <span class="info-value">Finalizada - <%= reserva.getStatus_reserv() %></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Localização</span>
+                            <span class="info-value"><%= reserva.getBicicleta().getLocalEntr_bike() %></span>
                         </div>
                     </div>
                     
-                    <button class="btn btn-success" 
-                            onclick="submitDistance('003')" 
-                            id="submit-003"
-                            disabled>
-                        <i class="fas fa-check"></i>
-                        Confirmar Distância
-                    </button>
+                    <div class="distance-form">
+                        <h4><i class="fas fa-route"></i> Informar Distância Percorrida</h4>
+                        <div class="form-group">
+                            <label for="distance-<%= reserva.getId_reserv() %>">
+                                <i class="fas fa-road"></i>
+                                Distância Total (em km) - Máximo 10 km:
+                            </label>
+                            <input type="number" 
+                                   id="distance-<%= reserva.getId_reserv() %>" 
+                                   min="0.1" 
+                                   max="10" 
+                                   step="0.1" 
+                                   placeholder="Ex: 5.5"
+                                   oninput="calculatePoints('<%= reserva.getId_reserv() %>')"
+                                   style="margin-bottom: 1rem;">
+                            
+                            <div class="points-calculator" id="calculator-<%= reserva.getId_reserv() %>" style="display: none;">
+                                <div><i class="fas fa-calculator"></i> Pontos que você ganhará:</div>
+                                <div class="points-display" id="points-<%= reserva.getId_reserv() %>">0</div>
+                                <div>pontos</div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-success" 
+                                onclick="submitDistance('<%= reserva.getId_reserv() %>')" 
+                                id="submit-<%= reserva.getId_reserv() %>"
+                                disabled>
+                            <i class="fas fa-check"></i>
+                            Confirmar Distância
+                        </button>
+                    </div>
                 </div>
-            </div>
+                
+                <% } %>
+            <% } else { %>
+                <!-- Nenhuma reserva encontrada -->
+                <div class="reservation-card" style="text-align: center; padding: 3rem;">
+                    <div style="color: #6c757d; font-size: 1.2rem; margin-bottom: 1rem;">
+                        <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                        Nenhuma reserva pendente encontrada
+                    </div>
+                    <p style="color: #9ca3af; margin-bottom: 2rem;">
+                        Você não possui reservas finalizadas aguardando informação de distância.
+                    </p>
+                    <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas" class="btn btn-primary">
+                        <i class="fas fa-calendar-check"></i>
+                        Ver Todas as Minhas Reservas
+                    </a>
+                </div>
+            <% } %>
         </div>
 
         <!-- Botões de Ação -->
         <div class="action-buttons">
-            <a href="rankingLocatario.jsp" class="btn btn-secondary">
+            <a href="<%=request.getContextPath()%>/RankingController?action=pagina-locatario" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i>
                 Voltar ao Ranking
             </a>
             
-            <a href="reservasLocatario.jsp" class="btn btn-primary">
+            <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas" class="btn btn-primary">
                 <i class="fas fa-calendar-check"></i>
                 Ver Todas as Reservas
             </a>
+            
+            <button onclick="window.location.reload()" class="btn btn-primary">
+                <i class="fas fa-sync-alt"></i>
+                Atualizar Página
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para Bike Própria -->
+    <div id="modalBikePropria" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 15px; padding: 2rem; max-width: 500px; width: 90%; margin: 2rem;">
+            <h3 style="color: #333; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-bicycle"></i>
+                Informar Distância - Bike Própria
+            </h3>
+            
+            <div class="form-group">
+                <label for="distancia-bike-propria">
+                    <i class="fas fa-road"></i>
+                    Distância percorrida (em km) - Máximo 10 km:
+                </label>
+                <input type="number" 
+                       id="distancia-bike-propria" 
+                       min="0.1" 
+                       max="10" 
+                       step="0.1" 
+                       placeholder="Ex: 5.0"
+                       oninput="calculatePointsBikePropria()"
+                       style="margin-bottom: 1rem;">
+                
+                <div class="points-calculator" id="calculator-bike-propria" style="display: none;">
+                    <div><i class="fas fa-calculator"></i> Pontos que você ganhará:</div>
+                    <div class="points-display" id="points-bike-propria">0</div>
+                    <div>pontos</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <button onclick="fecharModalBikePropria()" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button onclick="submitDistanciaBikePropria()" class="btn btn-success" id="submit-bike-propria" disabled>
+                    <i class="fas fa-check"></i>
+                    Confirmar
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
+        // Função para calcular pontos e habilitar/desabilitar botão
         function calculatePoints(reservaId) {
-            const distanceInput = document.getElementById(`distance-${reservaId}`);
-            const pointsDisplay = document.getElementById(`points-${reservaId}`);
-            const calculator = document.getElementById(`calculator-${reservaId}`);
-            const submitButton = document.getElementById(`submit-${reservaId}`);
+            console.log('Calculando pontos para reserva:', reservaId);
             
-            const distance = parseFloat(distanceInput.value) || 0;
-            const points = Math.floor(distance); // 1 km = 1 ponto
+            const distanceInput = document.getElementById('distance-' + reservaId);
+            const submitButton = document.getElementById('submit-' + reservaId);
+            const calculator = document.getElementById('calculator-' + reservaId);
+            const pointsDisplay = document.getElementById('points-' + reservaId);
             
-            if (distance > 0) {
-                calculator.style.display = 'block';
-                pointsDisplay.textContent = points;
-                submitButton.disabled = false;
-            } else {
-                calculator.style.display = 'none';
-                submitButton.disabled = true;
-            }
-        }
-        
-        function submitDistance(reservaId) {
-            const distanceInput = document.getElementById(`distance-${reservaId}`);
-            const distance = parseFloat(distanceInput.value);
-            const points = Math.floor(distance);
-            
-            if (!distance || distance <= 0) {
-                alert('Por favor, informe uma distância válida!');
+            if (!distanceInput || !submitButton) {
+                console.error('Elementos não encontrados');
                 return;
             }
             
-            if (confirm(`Confirmar distância de ${distance} km?\n\nVocê ganhará ${points} pontos no ranking.`)) {
-                // Simular envio para o servidor
-                const reservaCard = document.getElementById(`reserva-${reservaId}`);
-                const statusBadge = reservaCard.querySelector('.status-badge');
-                const distanceForm = reservaCard.querySelector('.distance-form');
+            const distance = parseFloat(distanceInput.value);
+            console.log('Distância:', distance);
+            
+            if (distance >= 0.1 && distance <= 10 && !isNaN(distance)) {
+                const points = Math.floor(distance);
                 
-                // Atualizar status
-                statusBadge.className = 'status-badge status-finalizada';
-                statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Distância Informada';
+                // Mostrar calculadora
+                calculator.style.display = 'block';
+                pointsDisplay.textContent = points;
                 
-                // Substituir formulário por informações
-                distanceForm.innerHTML = `
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Distância informada: <strong>${distance} km</strong> • Pontos ganhos: <strong>${points}</strong></span>
-                    </div>
-                `;
+                // Habilitar botão
+                submitButton.disabled = false;
+                submitButton.style.backgroundColor = '#28a745';
+                submitButton.style.opacity = '1';
                 
-                // Atualizar estatísticas (simulação)
-                const pontosAtuais = parseInt(document.querySelector('.stat-number').textContent.replace(',', ''));
-                const kmAtuais = parseInt(document.querySelectorAll('.stat-number')[1].textContent.replace(',', ''));
+                console.log('✅ Botão habilitado -', points, 'pontos');
+            } else {
+                // Esconder calculadora
+                calculator.style.display = 'none';
                 
-                document.querySelectorAll('.stat-number')[0].textContent = (pontosAtuais + points).toLocaleString();
-                document.querySelectorAll('.stat-number')[1].textContent = (kmAtuais + Math.floor(distance)).toLocaleString();
+                // Desabilitar botão
+                submitButton.disabled = true;
+                submitButton.style.backgroundColor = '#6c757d';
+                submitButton.style.opacity = '0.6';
                 
-                alert(`Parabéns! Você ganhou ${points} pontos no ranking!\n\nSua nova pontuação: ${pontosAtuais + points} pontos`);
+                console.log('❌ Botão desabilitado');
+            }
+        }
+        
+        // Função para enviar distância
+        function submitDistance(reservaId) {
+            console.log('Enviando distância para reserva:', reservaId);
+            
+            const distanceInput = document.getElementById('distance-' + reservaId);
+            const distance = parseFloat(distanceInput.value);
+            const points = Math.floor(distance);
+            
+            if (!distance || distance < 0.1 || distance > 10) {
+                alert('Por favor, informe uma distância válida entre 0.1 e 10 km!');
+                return;
+            }
+            
+            if (confirm('Confirmar distância de ' + distance + ' km?\n\nVocê ganhará ' + points + ' pontos no ranking.')) {
+                // Criar formulário
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%=request.getContextPath()%>/RankingController';
+                
+                // Adicionar campos
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'processar-distancia';
+                form.appendChild(actionInput);
+                
+                const reservaInput = document.createElement('input');
+                reservaInput.type = 'hidden';
+                reservaInput.name = 'idReserva';
+                reservaInput.value = reservaId;
+                form.appendChild(reservaInput);
+                
+                const distanciaInput = document.createElement('input');
+                distanciaInput.type = 'hidden';
+                distanciaInput.name = 'distancia';
+                distanciaInput.value = distance;
+                form.appendChild(distanciaInput);
+                
+                // Enviar
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        // Funções para modal de bike própria
+        function abrirModalBikePropria() {
+            <% if (jaInformouBikePropriaHoje) { %>
+                alert('Você já informou uma distância com sua bike hoje! Tente novamente amanhã.');
+                return;
+            <% } %>
+            document.getElementById('modalBikePropria').style.display = 'flex';
+        }
+        
+        function fecharModalBikePropria() {
+            document.getElementById('modalBikePropria').style.display = 'none';
+            document.getElementById('distancia-bike-propria').value = '';
+            document.getElementById('calculator-bike-propria').style.display = 'none';
+            document.getElementById('submit-bike-propria').disabled = true;
+        }
+        
+        function calculatePointsBikePropria() {
+            const distanceInput = document.getElementById('distancia-bike-propria');
+            const pointsDisplay = document.getElementById('points-bike-propria');
+            const calculator = document.getElementById('calculator-bike-propria');
+            const submitButton = document.getElementById('submit-bike-propria');
+            
+            const distance = parseFloat(distanceInput.value) || 0;
+            const points = Math.floor(distance);
+            
+            if (distance >= 0.1 && distance <= 10) {
+                calculator.style.display = 'block';
+                pointsDisplay.textContent = points;
+                submitButton.disabled = false;
+                submitButton.style.backgroundColor = '#28a745';
+                submitButton.style.opacity = '1';
+            } else {
+                calculator.style.display = 'none';
+                submitButton.disabled = true;
+                submitButton.style.backgroundColor = '#6c757d';
+                submitButton.style.opacity = '0.6';
+            }
+        }
+        
+        function submitDistanciaBikePropria() {
+            const distance = parseFloat(document.getElementById('distancia-bike-propria').value);
+            const points = Math.floor(distance);
+            
+            if (!distance || distance < 0.1 || distance > 10) {
+                alert('Por favor, informe uma distância válida entre 0.1 e 10 km!');
+                return;
+            }
+            
+            if (confirm('Confirmar distância de ' + distance + ' km com sua bike própria?\n\nVocê ganhará ' + points + ' pontos no ranking.')) {
+                // Criar formulário para bike própria
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '<%=request.getContextPath()%>/RankingController';
+                
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = 'processar-distancia-bike-propria';
+                form.appendChild(actionInput);
+                
+                const distanciaInput = document.createElement('input');
+                distanciaInput.type = 'hidden';
+                distanciaInput.name = 'distancia';
+                distanciaInput.value = distance;
+                form.appendChild(distanciaInput);
+                
+                // Enviar
+                document.body.appendChild(form);
+                form.submit();
             }
         }
         
         // Validação de entrada
-        document.querySelectorAll('input[type="number"]').forEach(input => {
-            input.addEventListener('input', function() {
-                if (this.value < 0) this.value = 0;
-                if (this.value > 1000) this.value = 1000;
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página carregada');
+            
+            // Limitar valores dos inputs
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('input', function() {
+                    if (this.value > 10) this.value = 10;
+                    if (this.value < 0) this.value = 0;
+                });
             });
+            
+            // Fechar modal ao clicar fora
+            const modal = document.getElementById('modalBikePropria');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        fecharModalBikePropria();
+                    }
+                });
+            }
         });
-        
-        console.log('Página de informar distância carregada');
     </script>
+
 </body>
 </html>

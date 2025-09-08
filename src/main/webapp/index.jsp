@@ -1,5 +1,16 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page session="false" %>
+<%
+    // Obter estatísticas do contexto da aplicação (carregadas pelo WebListener)
+    Integer bicicletasCompartilhadasObj = (Integer) application.getAttribute("bicicletasCompartilhadas");
+    Integer usuariosSatisfeitosObj = (Integer) application.getAttribute("usuariosSatisfeitos");
+    Float kmPedaladosObj = (Float) application.getAttribute("kmPedalados");
+    
+    // Valores padrão caso os atributos não existam
+    int bicicletasCompartilhadas = bicicletasCompartilhadasObj != null ? bicicletasCompartilhadasObj : 0;
+    int usuariosSatisfeitos = usuariosSatisfeitosObj != null ? usuariosSatisfeitosObj : 0;
+    float kmPedalados = kmPedaladosObj != null ? kmPedaladosObj : 0.0f;
+%>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -63,15 +74,21 @@
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div class="p-6 rounded-lg bg-gray-50">
-                    <div class="text-4xl font-bold text-teal-600 mb-2">1,000+</div>
+                    <div class="text-4xl font-bold text-teal-600 mb-2">
+                        <%=String.format("%,d", bicicletasCompartilhadas)%>
+                    </div>
                     <div class="text-gray-600">Bicicletas compartilhadas</div>
                 </div>
                 <div class="p-6 rounded-lg bg-gray-50">
-                    <div class="text-4xl font-bold text-teal-600 mb-2">500+</div>
+                    <div class="text-4xl font-bold text-teal-600 mb-2">
+                        <%=String.format("%,d", usuariosSatisfeitos)%>
+                    </div>
                     <div class="text-gray-600">Usuários satisfeitos</div>
                 </div>
                 <div class="p-6 rounded-lg bg-gray-50">
-                    <div class="text-4xl font-bold text-teal-600 mb-2">10,000+</div>
+                    <div class="text-4xl font-bold text-teal-600 mb-2">
+                        <%=String.format("%,.0f", kmPedalados)%>
+                    </div>
                     <div class="text-gray-600">Km pedalados</div>
                 </div>
             </div>

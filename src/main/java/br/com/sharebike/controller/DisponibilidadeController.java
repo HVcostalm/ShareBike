@@ -1,7 +1,6 @@
 package br.com.sharebike.controller;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +15,7 @@ import br.com.sharebike.dao.BicicletaDAO;
 import br.com.sharebike.dao.DisponibilidadeDAO;
 import br.com.sharebike.model.Bicicleta;
 import br.com.sharebike.model.Disponibilidade;
-import br.com.sharebike.utils.DisponibilidadeScheduler;
+import br.com.sharebike.utils.ValidadorDisponibilidade;
 
 @WebServlet("/DisponibilidadeController")
 public class DisponibilidadeController extends HttpServlet{
@@ -28,16 +27,35 @@ public class DisponibilidadeController extends HttpServlet{
 	public void init() throws ServletException{
 		try {
 			disponibilidadeDAO = new DisponibilidadeDAO();
+			bicicletaDAO = new BicicletaDAO();
 			
-			DisponibilidadeScheduler.iniciar();
+			//DisponibilidadeScheduler.iniciar();
 		} catch (Exception e) {
-			throw new ServletException("Erro ao inicializar o DisponibilidadeDAO", e);
+			throw new ServletException("Erro ao inicializar os DAOs", e);
 		}
 	}
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String action = request.getParameter("action");
 		try {
-			listarDisponibilidades(request, response);
+			switch (action != null ? action : "listar") {
+			case "form-adicionar":
+				exibirFormAdicionar(request, response);
+				break;
+			case "form-editar":
+				exibirFormEditar(request, response);
+				break;
+			case "exibir":
+				exibirDisponibilidade(request, response);
+				break;
+			case "listar-por-bicicleta":
+				listarDisponibilidadesPorBicicleta(request, response);
+				break;
+			case "listar":
+			default:
+				listarDisponibilidades(request, response);
+				break;
+			}
 		} catch (Exception e) {
 			throw new ServletException(e);
 		}
@@ -72,50 +90,100 @@ public class DisponibilidadeController extends HttpServlet{
 	}
 	
 	private void adicionarDisponibilidade(HttpServletRequest request, HttpServletResponse response) throws Exception{
-		LocalDateTime dataHoraIn_disp = LocalDateTime.parse(request.getParameter("dataHoraIn"));
-		LocalDateTime dataHoraFim_disp = LocalDateTime.parse(request.getParameter("dataHoraFim"));;
-		boolean disponivel_disp = Boolean.parseBoolean(request.getParameter("disponivel"));
+		String dataHoraInStr = request.getParameter("dataHoraIn");
+		String dataHoraFimStr = request.getParameter("dataHoraFim");
 		int id_bike = Integer.parseInt(request.getParameter("id_bike"));
 		
+		// Validar usando a classe utilitária
+		ValidadorDisponibilidade.ResultadoValidacao resultado = 
+			ValidadorDisponibilidade.validarNovaDisponibilidade(id_bike, dataHoraInStr, dataHoraFimStr);
+		
+		if (!resultado.isValido()) {
+			// Há erro - retornar para a página com mensagem de erro
+			request.setAttribute("erro", resultado.getMensagemErro());
+			
+			// Adicionar detalhes dos conflitos se existirem
+			if (!resultado.getDetalhesConflitos().isEmpty()) {
+				request.setAttribute("detalhesConflitos", resultado.getDetalhesConflitos());
+			}
+			
+			request.setAttribute("id_bike", id_bike);
+			request.setAttribute("dataHoraIn", dataHoraInStr);
+			request.setAttribute("dataHoraFim", dataHoraFimStr);
+			
+			// Buscar a bicicleta para exibir na página
+			Bicicleta bicicleta = bicicletaDAO.buscarPorId(id_bike);
+			request.setAttribute("bicicleta", bicicleta);
+			
+			// Buscar dados do proprietário
+			if (bicicleta != null && bicicleta.getUsuario() != null) {
+				br.com.sharebike.dao.UsuarioDAO usuarioDAO = new br.com.sharebike.dao.UsuarioDAO();
+				br.com.sharebike.model.Usuario proprietario = usuarioDAO.exibirUsuario(bicicleta.getUsuario().getCpfCnpj_user());
+				request.setAttribute("proprietario", proprietario);
+			}
+			
+			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/definirDisponibilidadeBike.jsp");
+			dispatcher.forward(request, response);
+			return;
+		}
+		
+		// Dados válidos - criar disponibilidade
+		LocalDateTime dataHoraIn_disp = LocalDateTime.parse(dataHoraInStr);
+		LocalDateTime dataHoraFim_disp = LocalDateTime.parse(dataHoraFimStr);
 		Bicicleta bicicleta = bicicletaDAO.buscarPorId(id_bike);
 		
-		Disponibilidade disponibilidade = new Disponibilidade(dataHoraIn_disp, dataHoraFim_disp, disponivel_disp, bicicleta);
+		Disponibilidade disponibilidade = new Disponibilidade(dataHoraIn_disp, dataHoraFim_disp, bicicleta);
 		
 		disponibilidadeDAO.cadastrarDisponibilidade(disponibilidade);
 		
-		// Resposta com um script para exibir o alerta e redirecionar
-		response.setContentType("text/html; charset=UTF-8");
-		PrintWriter out = response.getWriter();
-		out.println("<script type='text/javascript'>");
-		out.println("alert('Disponibilidade adicionada com sucesso!');");
-		out.println("window.location.href='pages/detalhesBicicleta.jsp';");
-		out.println("</script>");
-		out.close();
-		//response.sendRedirect("index.jsp");
+		// Redirecionar de volta para os detalhes da bicicleta
+		response.sendRedirect("BicicletaController?action=exibir&id=" + id_bike);
 	}
 	
 	private void editarDisponibilidade(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		int id_disp = Integer.parseInt(request.getParameter("id_disp"));
-		LocalDateTime dataHoraIn_disp = LocalDateTime.parse(request.getParameter("dataHoraIn"));
-		LocalDateTime dataHoraFim_disp = LocalDateTime.parse(request.getParameter("dataHoraFim"));;
+		String dataHoraInStr = request.getParameter("dataHoraIn");
+		String dataHoraFimStr = request.getParameter("dataHoraFim");
 		boolean disponivel_disp = Boolean.parseBoolean(request.getParameter("disponivel"));
 		int id_bike = Integer.parseInt(request.getParameter("id_bike"));
 		
+		// Validar usando a classe utilitária
+		ValidadorDisponibilidade.ResultadoValidacao resultado = 
+			ValidadorDisponibilidade.validarEdicaoDisponibilidade(id_bike, dataHoraInStr, dataHoraFimStr, id_disp);
+		
+		if (!resultado.isValido()) {
+			// Há erro - retornar para a página com mensagem de erro
+			request.setAttribute("erro", resultado.getMensagemErro());
+			
+			// Adicionar detalhes dos conflitos se existirem
+			if (!resultado.getDetalhesConflitos().isEmpty()) {
+				request.setAttribute("detalhesConflitos", resultado.getDetalhesConflitos());
+			}
+			
+			// Buscar a disponibilidade atual para exibir na página
+			Disponibilidade disponibilidadeAtual = disponibilidadeDAO.buscarPorId(id_disp);
+			request.setAttribute("disponibilidade", disponibilidadeAtual);
+			
+			// Buscar a bicicleta para exibir na página
+			Bicicleta bicicleta = bicicletaDAO.buscarPorId(id_bike);
+			request.setAttribute("bicicleta", bicicleta);
+			
+			RequestDispatcher dispatcher = request.getRequestDispatcher("pages/editarDisponibilidade.jsp");
+			dispatcher.forward(request, response);
+			return;
+		}
+		
+		// Dados válidos - atualizar disponibilidade
+		LocalDateTime dataHoraIn_disp = LocalDateTime.parse(dataHoraInStr);
+		LocalDateTime dataHoraFim_disp = LocalDateTime.parse(dataHoraFimStr);
 		Bicicleta bicicleta = bicicletaDAO.buscarPorId(id_bike);
 		
 		Disponibilidade disponibilidade = new Disponibilidade(id_disp, dataHoraIn_disp, dataHoraFim_disp, disponivel_disp, bicicleta);
 		
 		disponibilidadeDAO.editarDisponibilidade(disponibilidade);
 		
-		// Resposta com um script para exibir o alerta e redirecionar
-		response.setContentType("text/html; charset=UTF-8");
-		PrintWriter out = response.getWriter();
-		out.println("<script type='text/javascript'>");
-		out.println("alert('Disponibilidade editada com sucesso!');");
-		out.println("window.location.href='pages/detalhesBicicleta.jsp';");
-		out.println("</script>");
-		out.close();
-		// response.sendRedirect("index.jsp");
+		// Redirecionar de volta para os detalhes da bicicleta
+		response.sendRedirect("BicicletaController?action=exibir&id=" + id_bike);
 	}
 	
 	private void exibirDisponibilidade(HttpServletRequest request, HttpServletResponse response) throws Exception{
@@ -130,15 +198,6 @@ public class DisponibilidadeController extends HttpServlet{
 	    RequestDispatcher dispatcher = request.getRequestDispatcher("pages/detalhesDisponibilidade.jsp");
 	    dispatcher.forward(request, response);
 	}
-	
-	/*
-	
-	private void tornarIndisponiviel(HttpServletRequest request, HttpServletResponse response) throws Exception{
-		int atualizadas = disponibilidadeDAO.tornarIndisponivel();
-        System.out.println("Agendado: " + atualizadas + " disponibilidades tornadas indisponíveis.");
-	}
-	
-	*/
 	
 	private void listarDisponibilidadesPorBicicleta(HttpServletRequest request, HttpServletResponse response) throws Exception{
 		int id_bike = Integer.parseInt(request.getParameter("id_bike"));
@@ -174,6 +233,53 @@ public class DisponibilidadeController extends HttpServlet{
 
 		request.setAttribute("listaDisponibilidades", listaDisponibilidades);
 		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/listaBicicletas.jsp");
+		dispatcher.forward(request, response);
+	}
+	
+	private void exibirFormAdicionar(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		int id_bike = Integer.parseInt(request.getParameter("id"));
+		
+		// Buscar dados da bicicleta para exibir no formulário
+		Bicicleta bicicleta = bicicletaDAO.buscarPorId(id_bike);
+		
+		if (bicicleta != null) {
+			// Buscar dados do proprietário
+			br.com.sharebike.dao.UsuarioDAO usuarioDAO = new br.com.sharebike.dao.UsuarioDAO();
+			br.com.sharebike.model.Usuario proprietario = usuarioDAO.exibirUsuario(bicicleta.getUsuario().getCpfCnpj_user());
+			
+			// Atribuir à request
+			request.setAttribute("bicicleta", bicicleta);
+			request.setAttribute("proprietario", proprietario);
+		}
+		
+		// Encaminhar para o formulário
+		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/definirDisponibilidadeBike.jsp");
+		dispatcher.forward(request, response);
+	}
+	
+	private void exibirFormEditar(HttpServletRequest request, HttpServletResponse response) throws Exception{
+		int id_disp = Integer.parseInt(request.getParameter("id"));
+		int idBicicleta = Integer.parseInt(request.getParameter("idBicicleta"));
+		
+		// Buscar dados da disponibilidade
+		Disponibilidade disponibilidade = disponibilidadeDAO.buscarPorId(id_disp);
+		
+		// Buscar dados da bicicleta para exibir no formulário
+		Bicicleta bicicleta = bicicletaDAO.buscarPorId(idBicicleta);
+		
+		if (bicicleta != null && disponibilidade != null) {
+			// Buscar dados do proprietário
+			br.com.sharebike.dao.UsuarioDAO usuarioDAO = new br.com.sharebike.dao.UsuarioDAO();
+			br.com.sharebike.model.Usuario proprietario = usuarioDAO.exibirUsuario(bicicleta.getUsuario().getCpfCnpj_user());
+			
+			// Atribuir à request
+			request.setAttribute("disponibilidade", disponibilidade);
+			request.setAttribute("bicicleta", bicicleta);
+			request.setAttribute("proprietario", proprietario);
+		}
+		
+		// Encaminhar para o formulário de edição
+		RequestDispatcher dispatcher = request.getRequestDispatcher("pages/editarDisponibilidade.jsp");
 		dispatcher.forward(request, response);
 	}
 }

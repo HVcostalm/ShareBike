@@ -1,6 +1,7 @@
 package br.com.sharebike.dao;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -189,14 +190,18 @@ public class DisponibilidadeDAO extends BaseDAO{
 	    return linhasAfetadas;
     }
     
-    public int tornarIndisponivelSeReservaPendente(int idBicicleta) {
+    /**
+     * Torna indisponíveis apenas as disponibilidades que se sobrepõem ao período da reserva PENDENTE
+     */
+    public int tornarIndisponivelSeReservaPendente(int idBicicleta, LocalDateTime checkIn, LocalDateTime checkOut) {
         String update = "UPDATE Disponibilidade " +
                         "SET disponivel_disp = false " +
                         "WHERE Bicicleta = ? " +
-                        "AND EXISTS ( " +
-                        "    SELECT 1 FROM Reserva " +
-                        "    WHERE Reserva.Bicicleta = Disponibilidade.Bicicleta " +
-                        "    AND Reserva.status_reserv = 'PENDENTE' " +
+                        "AND ( " +
+                        "    (dataHoraIn_disp < ? AND dataHoraFim_disp > ?) " +     // Disponibilidade envolve check-in
+                        "    OR (dataHoraIn_disp < ? AND dataHoraFim_disp > ?) " +  // Disponibilidade envolve check-out  
+                        "    OR (dataHoraIn_disp >= ? AND dataHoraFim_disp <= ?) " + // Disponibilidade está dentro da reserva
+                        "    OR (dataHoraIn_disp <= ? AND dataHoraFim_disp >= ?) " + // Disponibilidade envolve toda a reserva
                         ")";
         int linhasAfetadas = 0;
 
@@ -204,8 +209,22 @@ public class DisponibilidadeDAO extends BaseDAO{
             conexao = Conexao.getConnection();
             sql = conexao.prepareStatement(update);
             sql.setInt(1, idBicicleta);
+            sql.setTimestamp(2, java.sql.Timestamp.valueOf(checkOut));     // dataHoraIn_disp < checkOut
+            sql.setTimestamp(3, java.sql.Timestamp.valueOf(checkIn));      // dataHoraFim_disp > checkIn
+            sql.setTimestamp(4, java.sql.Timestamp.valueOf(checkOut));     // dataHoraIn_disp < checkOut
+            sql.setTimestamp(5, java.sql.Timestamp.valueOf(checkIn));      // dataHoraFim_disp > checkIn
+            sql.setTimestamp(6, java.sql.Timestamp.valueOf(checkIn));      // dataHoraIn_disp >= checkIn
+            sql.setTimestamp(7, java.sql.Timestamp.valueOf(checkOut));     // dataHoraFim_disp <= checkOut
+            sql.setTimestamp(8, java.sql.Timestamp.valueOf(checkIn));      // dataHoraIn_disp <= checkIn
+            sql.setTimestamp(9, java.sql.Timestamp.valueOf(checkOut));     // dataHoraFim_disp >= checkOut
+            
             linhasAfetadas = sql.executeUpdate();
+            
+            System.out.println("💡 Disponibilidades tornadas indisponíveis para reserva PENDENTE na bicicleta " + idBicicleta + 
+                              ": " + linhasAfetadas + " períodos afetados");
+            
         } catch (Exception e) {
+            System.err.println("❌ Erro ao tornar disponibilidades indisponíveis: " + e.getMessage());
             e.printStackTrace();
         } finally {
             fecharConexao();
@@ -215,14 +234,18 @@ public class DisponibilidadeDAO extends BaseDAO{
     }
     
     
-    public int tornarDisponivelSeReservaNegada(int idBicicleta) {
+    /**
+     * Torna disponíveis novamente as disponibilidades que foram bloqueadas para uma reserva NEGADA
+     */
+    public int tornarDisponivelSeReservaNegada(int idBicicleta, LocalDateTime checkIn, LocalDateTime checkOut) {
         String update = "UPDATE Disponibilidade " +
                         "SET disponivel_disp = true " +
                         "WHERE Bicicleta = ? " +
-                        "AND EXISTS ( " +
-                        "    SELECT 1 FROM Reserva " +
-                        "    WHERE Reserva.Bicicleta = Disponibilidade.Bicicleta " +
-                        "    AND Reserva.status_reserv = 'NEGADA' " +
+                        "AND ( " +
+                        "    (dataHoraIn_disp < ? AND dataHoraFim_disp > ?) " +     // Disponibilidade envolve check-in
+                        "    OR (dataHoraIn_disp < ? AND dataHoraFim_disp > ?) " +  // Disponibilidade envolve check-out  
+                        "    OR (dataHoraIn_disp >= ? AND dataHoraFim_disp <= ?) " + // Disponibilidade está dentro da reserva
+                        "    OR (dataHoraIn_disp <= ? AND dataHoraFim_disp >= ?) " + // Disponibilidade envolve toda a reserva
                         ")";
         int linhasAfetadas = 0;
 
@@ -230,14 +253,73 @@ public class DisponibilidadeDAO extends BaseDAO{
             conexao = Conexao.getConnection();
             sql = conexao.prepareStatement(update);
             sql.setInt(1, idBicicleta);
+            sql.setTimestamp(2, java.sql.Timestamp.valueOf(checkOut));     // dataHoraIn_disp < checkOut
+            sql.setTimestamp(3, java.sql.Timestamp.valueOf(checkIn));      // dataHoraFim_disp > checkIn
+            sql.setTimestamp(4, java.sql.Timestamp.valueOf(checkOut));     // dataHoraIn_disp < checkOut
+            sql.setTimestamp(5, java.sql.Timestamp.valueOf(checkIn));      // dataHoraFim_disp > checkIn
+            sql.setTimestamp(6, java.sql.Timestamp.valueOf(checkIn));      // dataHoraIn_disp >= checkIn
+            sql.setTimestamp(7, java.sql.Timestamp.valueOf(checkOut));     // dataHoraFim_disp <= checkOut
+            sql.setTimestamp(8, java.sql.Timestamp.valueOf(checkIn));      // dataHoraIn_disp <= checkIn
+            sql.setTimestamp(9, java.sql.Timestamp.valueOf(checkOut));     // dataHoraFim_disp >= checkOut
+            
             linhasAfetadas = sql.executeUpdate();
+            
+            System.out.println("💡 Disponibilidades liberadas para reserva NEGADA na bicicleta " + idBicicleta + 
+                              ": " + linhasAfetadas + " períodos liberados");
+            
         } catch (Exception e) {
+            System.err.println("❌ Erro ao liberar disponibilidades: " + e.getMessage());
             e.printStackTrace();
         } finally {
             fecharConexao();
         }
 
         return linhasAfetadas;
+    }
+    
+    // Verificar se existe conflito de horários para uma nova disponibilidade
+    public boolean verificarConflitoHorarios(int id_bike, LocalDateTime novaDataInicio, LocalDateTime novaDataFim) {
+        return verificarConflitoHorarios(id_bike, novaDataInicio, novaDataFim, -1); // -1 indica que é uma nova disponibilidade
+    }
+    
+    // Verificar se existe conflito de horários (incluindo exclusão de ID para edição)
+    public boolean verificarConflitoHorarios(int id_bike, LocalDateTime novaDataInicio, LocalDateTime novaDataFim, int excluirIdDisp) {
+        String select = "SELECT id_disp, dataHoraIn_disp, dataHoraFim_disp FROM Disponibilidade WHERE Bicicleta = ?";
+        
+        // Se estamos editando, excluir a disponibilidade atual da verificação
+        if (excluirIdDisp != -1) {
+            select += " AND id_disp != ?";
+        }
+        
+        try {
+            conexao = Conexao.getConnection();
+            sql = conexao.prepareStatement(select);
+            sql.setInt(1, id_bike);
+            
+            if (excluirIdDisp != -1) {
+                sql.setInt(2, excluirIdDisp);
+            }
+            
+            rset = sql.executeQuery();
+            
+            while (rset.next()) {
+                LocalDateTime existenteInicio = rset.getTimestamp("dataHoraIn_disp").toLocalDateTime();
+                LocalDateTime existenteFim = rset.getTimestamp("dataHoraFim_disp").toLocalDateTime();
+                
+                // Verificar se há sobreposição: 
+                // Há conflito se: nova.início < existente.fim AND nova.fim > existente.início
+                if (novaDataInicio.isBefore(existenteFim) && novaDataFim.isAfter(existenteInicio)) {
+                    return true; // Há conflito
+                }
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            fecharConexao();
+        }
+        
+        return false; // Sem conflito
     }
 
 }

@@ -1,11 +1,126 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Bicicleta" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+<%@ page import="br.com.sharebike.model.Reserva" %>
+<%@ page import="br.com.sharebike.model.Feedback" %>
+<%@ page import="br.com.sharebike.model.Disponibilidade" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+
+<%!
+// Função para gerar estrelas da avaliação
+String gerarEstrelas(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "<i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i>";
+    }
+    
+    StringBuilder estrelas = new StringBuilder();
+    int estrelasCompletas = (int) Math.floor(avaliacao);
+    boolean meiaEstrela = (avaliacao - estrelasCompletas) >= 0.5;
+    
+    for (int i = 0; i < estrelasCompletas; i++) {
+        estrelas.append("<i class=\"fas fa-star\"></i>");
+    }
+    if (meiaEstrela && estrelasCompletas < 5) {
+        estrelas.append("<i class=\"fas fa-star-half-alt\"></i>");
+        estrelasCompletas++;
+    }
+    for (int i = estrelasCompletas; i < 5; i++) {
+        estrelas.append("<i class=\"far fa-star\"></i>");
+    }
+    
+    return estrelas.toString();
+}
+
+// Sobrecarga para aceitar int
+String gerarEstrelas(int avaliacao) {
+    return gerarEstrelas((float) avaliacao);
+}
+
+// Função para formatar avaliação
+String formatarAvaliacao(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "Sem Avaliação";
+    }
+    return String.format("%.1f/5.0", avaliacao);
+}
+
+// Função para exibir valor de avaliação em métricas
+String exibirAvaliacaoMetrica(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "N/A";
+    }
+    return String.format("%.1f", avaliacao);
+}
+
+// Função para exibir avaliação completa (estrelas + texto)
+String exibirAvaliacaoCompleta(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "<i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i> Sem Avaliação";
+    }
+    return gerarEstrelas(avaliacao) + " (" + String.format("%.1f/5.0", avaliacao) + ")";
+}
+
+// Função para exibir avaliação completa com int (para feedbacks)
+String exibirAvaliacaoCompletaInt(int avaliacao) {
+    // Para feedbacks, 0 também é considerado como "sem avaliação" pois não faz sentido dar 0 estrelas
+    if (avaliacao <= 0) {
+        return "Sem Avaliação";
+    }
+    Float avaliacaoFloat = (float) avaliacao;
+    return gerarEstrelas(avaliacaoFloat) + " (" + avaliacao + "/5)";
+}
+%>
+
+<%
+// Verificar se o usuário está logado
+Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+if (usuarioLogado == null) {
+    response.sendRedirect("loginUsuario.jsp");
+    return;
+}
+
+// Obter dados enviados pelo controller
+Bicicleta bicicleta = (Bicicleta) request.getAttribute("bicicleta");
+Usuario proprietario = (Usuario) request.getAttribute("proprietario");
+List<Reserva> reservasBicicleta = (List<Reserva>) request.getAttribute("reservasBicicleta");
+List<Feedback> feedbacksBicicleta = (List<Feedback>) request.getAttribute("feedbacksBicicleta");
+List<Disponibilidade> disponibilidadesBicicleta = (List<Disponibilidade>) request.getAttribute("disponibilidadesBicicleta");
+
+// Obter métricas calculadas pelo controller
+Integer totalReservasAttr = (Integer) request.getAttribute("totalReservas");
+Integer reservasAtivasAttr = (Integer) request.getAttribute("reservasAtivas");
+Integer totalFeedbacksAttr = (Integer) request.getAttribute("totalFeedbacks");
+Double mediaAvaliacoesFeedbackAttr = (Double) request.getAttribute("mediaAvaliacoesFeedback");
+
+int totalReservas = totalReservasAttr != null ? totalReservasAttr : 0;
+int reservasAtivas = reservasAtivasAttr != null ? reservasAtivasAttr : 0;
+int totalFeedbacks = totalFeedbacksAttr != null ? totalFeedbacksAttr : 0;
+double mediaAvaliacoesFeedback = mediaAvaliacoesFeedbackAttr != null ? mediaAvaliacoesFeedbackAttr : 0.0;
+
+if (bicicleta == null) {
+    response.sendRedirect("bicicletasLocador.jsp");
+    return;
+}
+
+// Obter avaliação da bicicleta
+Float mediaAvaliacoes = bicicleta.getAvaliacao_bike();
+// Tratar 0.0 como se fosse null
+if (mediaAvaliacoes != null && mediaAvaliacoes == 0.0f) {
+    mediaAvaliacoes = null;
+}
+
+// Formatadores de data
+DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+%>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Detalhes da Bicicleta - Locador</title>
-    <link rel="stylesheet" href="../assets/css/bicicletas.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/bicicletas.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .bike-details-container {
@@ -15,7 +130,7 @@
         }
         
         .bike-header {
-            background: linear-gradient(135deg, #28a745, #20c997);
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
             color: white;
             padding: 2rem;
             border-radius: 15px;
@@ -93,7 +208,7 @@
         
         .action-btn {
             background: rgba(255, 255, 255, 0.9);
-            color: #28a745;
+            color: #38b2ac;
             padding: 0.8rem 1.5rem;
             border: none;
             border-radius: 10px;
@@ -154,7 +269,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #28a745, #20c997);
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
             color: white;
         }
         
@@ -211,7 +326,7 @@
         .metric-value {
             font-size: 2rem;
             font-weight: bold;
-            color: #28a745;
+            color: #38b2ac;
             margin-bottom: 0.5rem;
         }
         
@@ -226,7 +341,7 @@
         }
         
         .metric-change.positive {
-            color: #28a745;
+            color: #38b2ac;
         }
         
         .metric-change.negative {
@@ -418,7 +533,7 @@
         }
         
         .btn-success {
-            background: linear-gradient(135deg, #28a745, #20c997);
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
             color: white;
             padding: 1rem 2rem;
             border: none;
@@ -434,7 +549,7 @@
         
         .btn-success:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+            box-shadow: 0 8px 20px rgba(56, 178, 172, 0.3);
         }
         
         .btn-secondary {
@@ -491,51 +606,48 @@
 </head>
 <body>
     <header>
-        <h1><i class="fas fa-bicycle"></i> Gerenciar Bicicleta</h1>
+        <h1><i class="fas fa-bicycle"></i> Detalhes da Bicicleta</h1>
     </header>
     
     <div class="container">
         <nav class="nav">
-            <a href="<%=request.getContextPath()%>/pages/bicicletasLocador.jsp"><i class="fas fa-bicycle"></i> Minhas Bicicletas</a>
-            <a href="<%=request.getContextPath()%>/pages/reservasLocador.jsp"><i class="fas fa-calendar-check"></i> Gerenciar Reservas</a>
-            <a href="<%=request.getContextPath()%>/pages/fazerFeedbackLocador.jsp"><i class="fas fa-comment-dots"></i> Avaliar Locatários</a>
-            <a href="<%=request.getContextPath()%>/pages/dashboardBikes.jsp"><i class="fas fa-chart-bar"></i> Dashboard</a>
+            <a href="<%=request.getContextPath()%>/BicicletaController?action=minhas-bikes&cpfCnpj=<%= usuarioLogado.getCpfCnpj_user() %>"><i class="fas fa-arrow-left"></i> Voltar às Minhas Bicicletas</a>
         </nav>
         
         <div class="bike-details-container">
             <!-- Cabeçalho da Bicicleta -->
             <div class="bike-header">
-                <img src="../assets/images/bike1.jpg" alt="Trek FX 3 Disc" class="bike-image-main" onerror="this.src='https://via.placeholder.com/300x200/28a745/ffffff?text=Trek+FX+3'">
+                <img src="<%= bicicleta.getFoto_bike() %>" alt="<%= bicicleta.getNome_bike() %>" class="bike-image-main" >
                 <div class="bike-info-main">
-                    <div class="bike-title">Trek FX 3 Disc</div>
-                    <div class="bike-subtitle">Bicicleta Híbrida de Alta Performance</div>
+                    <div class="bike-title"><%= bicicleta.getNome_bike() != null ? bicicleta.getNome_bike() : "Nome não informado" %></div>
+                    <div class="bike-subtitle"><%= bicicleta.getTipo_bike() != null ? bicicleta.getTipo_bike() : "Tipo não informado" %></div>
                     <div class="bike-status">
                         <i class="fas fa-check-circle"></i>
-                        Ativa e Disponível
+                        Sua Bicicleta
                     </div>
                     <div class="bike-stats">
                         <div class="stat-item">
-                            <div class="stat-value">4.8</div>
+                            <div class="stat-value">
+                                <%= gerarEstrelas(bicicleta.getAvaliacao_bike()) %>
+                                <br>
+                                <%= exibirAvaliacaoMetrica(bicicleta.getAvaliacao_bike()) %>/5.0
+                            </div>
                             <div class="stat-label">Avaliação</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">23</div>
+                            <div class="stat-value"><%= totalReservas %></div>
                             <div class="stat-label">Reservas</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">87%</div>
-                            <div class="stat-label">Ocupação</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">47</div>
-                            <div class="stat-label">Aluguéis</div>
+                            <div class="stat-value"><%= totalFeedbacks %></div>
+                            <div class="stat-label">Avaliações</div>
                         </div>
                     </div>
                     <div class="management-actions">
-                        <a href="<%=request.getContextPath()%>/pages/editarBicicleta.jsp" class="action-btn">
+                        <a href="<%=request.getContextPath()%>/BicicletaController?action=form-editar&id=<%= bicicleta.getId_bike() %>" class="action-btn">
                             <i class="fas fa-edit"></i> Editar Detalhes
                         </a>
-                        <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp" class="action-btn">
+                        <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp?id=<%= bicicleta.getId_bike() %>" class="action-btn">
                             <i class="fas fa-calendar-alt"></i> Gerenciar Disponibilidade
                         </a>
                     </div>
@@ -549,24 +661,34 @@
                 </h2>
                 <div class="metrics-grid">
                     <div class="metric-card">
-                        <div class="metric-value">87%</div>
-                        <div class="metric-label">Taxa de Ocupação</div>
-                        <div class="metric-change positive">+15% este mês</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">23</div>
-                        <div class="metric-label">Total de Reservas</div>
-                        <div class="metric-change positive">+3 novas</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">87%</div>
-                        <div class="metric-label">Taxa de Ocupação</div>
-                        <div class="metric-change positive">+5% vs. média</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">4.8</div>
+                        <div class="metric-value">
+                            <%= gerarEstrelas(bicicleta.getAvaliacao_bike()) %>
+                            <br>
+                            <%= exibirAvaliacaoMetrica(bicicleta.getAvaliacao_bike()) %>/5.0
+                        </div>
                         <div class="metric-label">Avaliação Média</div>
-                        <div class="metric-change positive">+0.2 pontos</div>
+                        <div class="metric-change <%= (bicicleta.getAvaliacao_bike() != null && bicicleta.getAvaliacao_bike() >= 4.0) ? "positive" : "negative" %>">
+                            <%= formatarAvaliacao(bicicleta.getAvaliacao_bike()) %>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value"><%= totalReservas %></div>
+                        <div class="metric-label">Total de Reservas</div>
+                        <div class="metric-change positive">Histórico completo</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value"><%= totalFeedbacks %></div>
+                        <div class="metric-label">Avaliações Recebidas</div>
+                        <div class="metric-change <%= totalFeedbacks > 0 ? "positive" : "negative" %>">
+                            <%= totalFeedbacks > 0 ? "Média: " + String.format("%.1f", mediaAvaliacoesFeedback) + "/5.0" : "Nenhuma avaliação" %>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value"><%= disponibilidadesBicicleta != null ? disponibilidadesBicicleta.size() : 0 %></div>
+                        <div class="metric-label">Disponibilidades</div>
+                        <div class="metric-change <%= disponibilidadesBicicleta != null && disponibilidadesBicicleta.size() > 0 ? "positive" : "negative" %>">
+                            <%= disponibilidadesBicicleta != null && disponibilidadesBicicleta.size() > 0 ? "Configuradas" : "Não configuradas" %>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -577,7 +699,7 @@
                 <div class="details-section">
                     <h2 class="section-title">
                         <i class="fas fa-cog"></i> Especificações Técnicas
-                        <i class="fas fa-edit edit-icon" onclick="window.location.href='<%=request.getContextPath()%>/pages/editarBicicleta.jsp'" title="Editar especificações"></i>
+                        <i class="fas fa-edit edit-icon" onclick="window.location.href='<%=request.getContextPath()%>/BicicletaController?action=form-editar&id=<%= bicicleta.getId_bike() %>'" title="Editar especificações"></i>
                     </h2>
                     
                     <div class="detail-item">
@@ -585,126 +707,18 @@
                             <i class="fas fa-bicycle"></i>
                         </div>
                         <div class="detail-content">
-                            <div class="detail-label">Marca e Modelo</div>
-                            <div class="detail-value">Trek FX 3 Disc - Modelo 2024</div>
+                            <div class="detail-label">Nome da Bicicleta</div>
+                            <div class="detail-value"><%= bicicleta.getNome_bike() != null ? bicicleta.getNome_bike() : "Não informado" %></div>
                         </div>
                     </div>
                     
                     <div class="detail-item">
                         <div class="detail-icon">
-                            <i class="fas fa-palette"></i>
+                            <i class="fas fa-tags"></i>
                         </div>
                         <div class="detail-content">
-                            <div class="detail-label">Cor</div>
-                            <div class="detail-value">Azul Metalizado</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-arrows-alt-v"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Tamanho do Quadro</div>
-                            <div class="detail-value">Médio (17") - Altura 1,65m - 1,80m</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-weight-hanging"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Peso</div>
-                            <div class="detail-value">12,8 kg</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-cogs"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Câmbio</div>
-                            <div class="detail-value">Shimano Altus 8 velocidades</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-circle"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Freios</div>
-                            <div class="detail-value">Freios a disco hidráulicos</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-road"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Pneus</div>
-                            <div class="detail-value">700x35c - Ideais para asfalto e trilhas leves</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-calendar-plus"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Data de Cadastro</div>
-                            <div class="detail-value">15 de Janeiro de 2024</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Configurações de Aluguel -->
-                <div class="details-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-dollar-sign"></i> Configurações de Aluguel
-                        <i class="fas fa-edit edit-icon" onclick="window.location.href='<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp'" title="Editar configurações"></i>
-                    </h2>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-tag"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Disponibilidade</div>
-                            <div class="detail-value">Disponível</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-percentage"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Desconto Semanal</div>
-                            <div class="detail-value">15% (7+ dias)</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Período Mínimo</div>
-                            <div class="detail-value">1 dia</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-calendar-week"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Período Máximo</div>
-                            <div class="detail-value">30 dias</div>
+                            <div class="detail-label">Tipo</div>
+                            <div class="detail-value"><%= bicicleta.getTipo_bike() != null ? bicicleta.getTipo_bike() : "Não informado" %></div>
                         </div>
                     </div>
                     
@@ -713,18 +727,8 @@
                             <i class="fas fa-map-marker-alt"></i>
                         </div>
                         <div class="detail-content">
-                            <div class="detail-label">Local de Retirada</div>
-                            <div class="detail-value">Vila Madalena, São Paulo - SP</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Política de Cancelamento</div>
-                            <div class="detail-value">Flexível (até 24h antes)</div>
+                            <div class="detail-label">Local de Entrega</div>
+                            <div class="detail-value"><%= bicicleta.getLocalEntr_bike() != null ? bicicleta.getLocalEntr_bike() : "Não informado" %></div>
                         </div>
                     </div>
                     
@@ -733,136 +737,254 @@
                             <i class="fas fa-tools"></i>
                         </div>
                         <div class="detail-content">
-                            <div class="detail-label">Última Manutenção</div>
-                            <div class="detail-value">5 de Agosto de 2025</div>
+                            <div class="detail-label">Estado de Conservação</div>
+                            <div class="detail-value"><%= bicicleta.getEstadoConserv_bike() != null ? bicicleta.getEstadoConserv_bike() : "Não informado" %></div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-barcode"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Chassi</div>
+                            <div class="detail-value"><%= bicicleta.getChassi_bike() != null ? bicicleta.getChassi_bike() : "Não informado" %></div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Avaliação</div>
+                            <div class="detail-value">
+                                <%= exibirAvaliacaoCompleta(bicicleta.getAvaliacao_bike()) %>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Calendário de Disponibilidade -->
-            <div class="availability-calendar">
-                <div class="calendar-header">
+                
+                <!-- Informações do Proprietário -->
+                <div class="details-section">
                     <h2 class="section-title">
-                        <i class="fas fa-calendar-alt"></i> Disponibilidade (Próximos 30 dias)
+                        <i class="fas fa-user"></i> Informações do Proprietário
                     </h2>
-                    <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp" class="btn-primary" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
-                        <i class="fas fa-cog"></i> Gerenciar
-                    </a>
-                </div>
-                
-                <div class="calendar-grid">
-                    <!-- Cabeçalhos dos dias -->
-                    <div class="calendar-day header">Dom</div>
-                    <div class="calendar-day header">Seg</div>
-                    <div class="calendar-day header">Ter</div>
-                    <div class="calendar-day header">Qua</div>
-                    <div class="calendar-day header">Qui</div>
-                    <div class="calendar-day header">Sex</div>
-                    <div class="calendar-day header">Sáb</div>
                     
-                    <!-- Dias do mês (exemplo) -->
-                    <div class="calendar-day available">8</div>
-                    <div class="calendar-day available">9</div>
-                    <div class="calendar-day available">10</div>
-                    <div class="calendar-day reserved">11</div>
-                    <div class="calendar-day reserved">12</div>
-                    <div class="calendar-day available">13</div>
-                    <div class="calendar-day available">14</div>
-                    <div class="calendar-day available">15</div>
-                    <div class="calendar-day available">16</div>
-                    <div class="calendar-day unavailable">17</div>
-                    <div class="calendar-day unavailable">18</div>
-                    <div class="calendar-day available">19</div>
-                    <div class="calendar-day available">20</div>
-                    <div class="calendar-day available">21</div>
-                    <div class="calendar-day available">22</div>
-                    <div class="calendar-day reserved">23</div>
-                    <div class="calendar-day reserved">24</div>
-                    <div class="calendar-day available">25</div>
-                    <div class="calendar-day available">26</div>
-                    <div class="calendar-day available">27</div>
-                    <div class="calendar-day available">28</div>
-                    <div class="calendar-day available">29</div>
-                    <div class="calendar-day available">30</div>
-                    <div class="calendar-day available">31</div>
-                    <div class="calendar-day available">1</div>
-                    <div class="calendar-day available">2</div>
-                    <div class="calendar-day available">3</div>
-                    <div class="calendar-day available">4</div>
-                    <div class="calendar-day available">5</div>
-                    <div class="calendar-day available">6</div>
-                    <div class="calendar-day available">7</div>
-                </div>
-                
-                <div class="calendar-legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #d4edda;"></div>
-                        <span>Disponível</span>
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Nome</div>
+                            <div class="detail-value"><%= proprietario != null && proprietario.getNomeRazaoSocial_user() != null ? proprietario.getNomeRazaoSocial_user() : "Não informado" %></div>
+                        </div>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #f8d7da;"></div>
-                        <span>Indisponível</span>
+                    
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Email</div>
+                            <div class="detail-value"><%= proprietario != null && proprietario.getEmail_user() != null ? proprietario.getEmail_user() : "Não informado" %></div>
+                        </div>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #fff3cd;"></div>
-                        <span>Reservado</span>
+                    
+                    <div class="detail-item">
+                        <div class="detail-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="detail-content">
+                            <div class="detail-label">Telefone</div>
+                            <div class="detail-value"><%= proprietario != null && proprietario.getTelefone_user() != null ? proprietario.getTelefone_user() : "Não informado" %></div>
+                        </div>
                     </div>
+                    
+                    
                 </div>
             </div>
             
-            <!-- Reservas Recentes -->
+            <!-- Reservas da Bicicleta -->
+            <% if (reservasBicicleta != null && !reservasBicicleta.isEmpty()) { %>
             <div class="recent-bookings">
                 <h2 class="section-title">
-                    <i class="fas fa-calendar-check"></i> Reservas Recentes
+                    <i class="fas fa-calendar-check"></i> Reservas da Bicicleta (<%= reservasBicicleta.size() %>)
                 </h2>
                 
+                <% for (Reserva reserva : reservasBicicleta) { 
+                    String statusClass = "";
+                    if ("Ativa".equals(reserva.getStatus_reserv()) || "Confirmada".equals(reserva.getStatus_reserv())) {
+                        statusClass = "upcoming";
+                    } else if ("Finalizada".equals(reserva.getStatus_reserv()) || "Concluída".equals(reserva.getStatus_reserv())) {
+                        statusClass = "completed";
+                    } else {
+                        statusClass = "active";
+                    }
+                    
+                    // Criar iniciais do usuário
+                    String iniciais = "";
+                    if (reserva.getUsuario() != null && reserva.getUsuario().getNomeRazaoSocial_user() != null) {
+                        String[] nomes = reserva.getUsuario().getNomeRazaoSocial_user().split(" ");
+                        if (nomes.length >= 2) {
+                            iniciais = String.valueOf(nomes[0].charAt(0)) + String.valueOf(nomes[1].charAt(0));
+                        } else if (nomes.length == 1) {
+                            iniciais = String.valueOf(nomes[0].charAt(0)) + String.valueOf(nomes[0].charAt(1));
+                        } else {
+                            iniciais = "??";
+                        }
+                    }
+                %>
                 <div class="booking-item">
-                    <div class="booking-avatar">MS</div>
+                    <div class="booking-avatar"><%= iniciais.toUpperCase() %></div>
                     <div class="booking-details">
-                        <div class="booking-customer">Maria Santos</div>
-                        <div class="booking-period">11-12 de Agosto • 2 dias</div>
+                        <div class="booking-customer">
+                            <%= reserva.getUsuario() != null && reserva.getUsuario().getNomeRazaoSocial_user() != null ? 
+                                reserva.getUsuario().getNomeRazaoSocial_user() : "Nome não informado" %>
+                        </div>
+                        <div class="booking-period">
+                            <%= reserva.getDataCheckIn_reserv() != null ? reserva.getDataCheckIn_reserv().toLocalDate() : "Data não informada" %> 
+                            até 
+                            <%= reserva.getDataCheckOut_reserv() != null ? reserva.getDataCheckOut_reserv().toLocalDate() : "Data não informada" %>
+                        </div>
                     </div>
-                    <div class="booking-status upcoming">Confirmada</div>
+                    <div class="booking-status <%= statusClass %>"><%= reserva.getStatus_reserv() != null ? reserva.getStatus_reserv() : "Status não informado" %></div>
                 </div>
-                
-                <div class="booking-item">
-                    <div class="booking-avatar">JS</div>
-                    <div class="booking-details">
-                        <div class="booking-customer">João Silva</div>
-                        <div class="booking-period">5-7 de Agosto • 3 dias</div>
-                    </div>
-                    <div class="booking-status completed">Concluída</div>
-                </div>
-                
-                <div class="booking-item">
-                    <div class="booking-avatar">PC</div>
-                    <div class="booking-details">
-                        <div class="booking-customer">Pedro Costa</div>
-                        <div class="booking-period">23-24 de Agosto • 2 dias</div>
-                    </div>
-                    <div class="booking-status upcoming">Agendada</div>
-                </div>
-                
-                <div class="booking-item">
-                    <div class="booking-avatar">AP</div>
-                    <div class="booking-details">
-                        <div class="booking-customer">Ana Paula</div>
-                        <div class="booking-period">1-3 de Agosto • 3 dias</div>
-                    </div>
-                    <div class="booking-status completed">Concluída</div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="recent-bookings">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-check"></i> Reservas da Bicicleta
+                </h2>
+                <div style="text-align: center; padding: 2rem; color: #6c757d;">
+                    <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>Nenhuma reserva encontrada para esta bicicleta.</p>
                 </div>
             </div>
+            <% } %>
+            
+            <!-- Feedbacks da Bicicleta -->
+            <% if (feedbacksBicicleta != null && !feedbacksBicicleta.isEmpty()) { %>
+            <div class="recent-bookings">
+                <h2 class="section-title">
+                    <i class="fas fa-comments"></i> Avaliações da Bicicleta (<%= feedbacksBicicleta.size() %>)
+                    <span style="font-size: 0.9rem; color: #6c757d; font-weight: normal;">
+                        Média: <%= String.format("%.1f", mediaAvaliacoesFeedback) %>/5.0
+                    </span>
+                </h2>
+                
+                <% for (Feedback feedback : feedbacksBicicleta) { 
+                    // Criar iniciais do avaliador
+                    String iniciaisAvaliador = "";
+                    if (feedback.getAvaliador_Usuario() != null && feedback.getAvaliador_Usuario().getNomeRazaoSocial_user() != null) {
+                        String[] nomes = feedback.getAvaliador_Usuario().getNomeRazaoSocial_user().split(" ");
+                        if (nomes.length >= 2) {
+                            iniciaisAvaliador = String.valueOf(nomes[0].charAt(0)) + String.valueOf(nomes[1].charAt(0));
+                        } else if (nomes.length == 1) {
+                            iniciaisAvaliador = String.valueOf(nomes[0].charAt(0)) + String.valueOf(nomes[0].charAt(1));
+                        } else {
+                            iniciaisAvaliador = "??";
+                        }
+                    }
+                    
+                    String avaliacaoClass = feedback.getAvaliacaoBike_feedb() >= 4 ? "positive" : feedback.getAvaliacaoBike_feedb() >= 3 ? "neutral" : "negative";
+                %>
+                <div class="booking-item" style="border-left: 4px solid <%= feedback.getAvaliacaoBike_feedb() >= 4 ? "#38b2ac" : feedback.getAvaliacaoBike_feedb() >= 3 ? "#ffc107" : "#dc3545" %>;">
+                    <div class="booking-avatar" style="background: linear-gradient(135deg, #17a2b8, #6610f2);"><%= iniciaisAvaliador.toUpperCase() %></div>
+                    <div class="booking-details" style="flex: 2;">
+                        <div class="booking-customer">
+                            <%= feedback.getAvaliador_Usuario() != null && feedback.getAvaliador_Usuario().getNomeRazaoSocial_user() != null ? 
+                                feedback.getAvaliador_Usuario().getNomeRazaoSocial_user() : "Avaliador anônimo" %>
+                        </div>
+                        <div class="booking-period">
+                            <%= feedback.getData_feedb() != null ? feedback.getData_feedb().format(dateTimeFormatter) : "Data não informada" %>
+                        </div>
+                        <% if (feedback.getObsBike_feedb() != null && !feedback.getObsBike_feedb().trim().isEmpty()) { %>
+                        <div style="margin-top: 0.5rem; font-style: italic; color: #666; font-size: 0.9rem;">
+                            "<%= feedback.getObsBike_feedb() %>"
+                        </div>
+                        <% } %>
+                    </div>
+                    <div class="booking-status" style="background: <%= feedback.getAvaliacaoBike_feedb() >= 4 ? "#c8f7f2" : feedback.getAvaliacaoBike_feedb() >= 3 ? "#fff3cd" : "#f8d7da" %>; color: <%= feedback.getAvaliacaoBike_feedb() >= 4 ? "#047857" : feedback.getAvaliacaoBike_feedb() >= 3 ? "#856404" : "#721c24" %>;">
+                        <%= exibirAvaliacaoCompletaInt(feedback.getAvaliacaoBike_feedb()) %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="recent-bookings">
+                <h2 class="section-title">
+                    <i class="fas fa-comments"></i> Avaliações da Bicicleta
+                </h2>
+                <div style="text-align: center; padding: 2rem; color: #6c757d;">
+                    <i class="fas fa-comment-slash" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>Nenhuma avaliação encontrada para esta bicicleta.</p>
+                </div>
+            </div>
+            <% } %>
+            
+            <!-- Disponibilidades da Bicicleta -->
+            <% if (disponibilidadesBicicleta != null && !disponibilidadesBicicleta.isEmpty()) { %>
+            <div class="recent-bookings">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-alt"></i> Disponibilidades (<%= disponibilidadesBicicleta.size() %>)
+                </h2>
+                
+                <% for (Disponibilidade disponibilidade : disponibilidadesBicicleta) { 
+                    String statusDispClass = disponibilidade.isDisponivel_disp() ? "completed" : "upcoming";
+                    String statusDispText = disponibilidade.isDisponivel_disp() ? "Disponível" : "Indisponível";
+                %>
+                <div class="booking-item">
+                    <div class="booking-avatar" style="background: linear-gradient(135deg, #fd7e14, #e83e8c);">
+                        <i class="fas fa-calendar" style="font-size: 1.2rem;"></i>
+                    </div>
+                    <div class="booking-details">
+                        <div class="booking-customer">
+                            <%= disponibilidade.getDataHoraIn_disp() != null ? disponibilidade.getDataHoraIn_disp().format(dateFormatter) : "Data início não informada" %>
+                            até
+                            <%= disponibilidade.getDataHoraFim_disp() != null ? disponibilidade.getDataHoraFim_disp().format(dateFormatter) : "Data fim não informada" %>
+                        </div>
+                        <div class="booking-period">
+                            Horário: <%= disponibilidade.getDataHoraIn_disp() != null ? disponibilidade.getDataHoraIn_disp().toLocalTime() : "Não informado" %> - 
+                            <%= disponibilidade.getDataHoraFim_disp() != null ? disponibilidade.getDataHoraFim_disp().toLocalTime() : "Não informado" %>
+                        </div>
+                    </div>
+                    <div class="booking-status <%= statusDispClass %>"><%= statusDispText %></div>
+                    <% if (disponibilidade.isDisponivel_disp()) { %>
+                    <a href="<%=request.getContextPath()%>/DisponibilidadeController?action=form-editar&id=<%= disponibilidade.getId_disp() %>&idBicicleta=<%= bicicleta.getId_bike() %>" 
+                       class="edit-icon" title="Editar Disponibilidade" style="margin-left: 1rem;">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <% } %>
+                </div>
+                <% } %>
+            </div>
+            <% } else { %>
+            <div class="recent-bookings">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-alt"></i> Disponibilidades
+                </h2>
+                <div style="text-align: center; padding: 2rem; color: #6c757d;">
+                    <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                    <p>Nenhuma disponibilidade configurada para esta bicicleta.</p>
+                    <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp?id=<%= bicicleta.getId_bike() %>" 
+                       style="display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+                        <i class="fas fa-plus"></i> Configurar Disponibilidade
+                    </a>
+                </div>
+            </div>
+            <% } %>
             
             <!-- Botões de Ação Principais -->
             <div class="main-action-buttons">
-                <a href="<%=request.getContextPath()%>/pages/editarBicicleta.jsp" class="btn-primary">
+                <a href="<%=request.getContextPath()%>/BicicletaController?action=form-editar&id=<%= bicicleta.getId_bike() %>" class="btn-primary">
                     <i class="fas fa-edit"></i> Editar Bicicleta
                 </a>
-                <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp" class="btn-success">
+                <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp?id=<%= bicicleta.getId_bike() %>" class="btn-success">
                     <i class="fas fa-calendar-alt"></i> Definir Disponibilidade
                 </a>
-                <a href="<%=request.getContextPath()%>/pages/bicicletasLocador.jsp" class="btn-secondary">
+                <a href="<%=request.getContextPath()%>/BicicletaController?action=minhas-bikes&cpfCnpj=<%= usuarioLogado.getCpfCnpj_user() %>" class="btn-secondary">
                     <i class="fas fa-arrow-left"></i> Voltar às Minhas Bicicletas
                 </a>
             </div>

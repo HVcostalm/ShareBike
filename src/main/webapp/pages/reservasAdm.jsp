@@ -1,291 +1,529 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="java.util.List" %>
+<%@ page import="br.com.sharebike.model.Reserva" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.time.temporal.ChronoUnit" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Gestão de Reservas - Administrador</title>
-    <link rel="stylesheet" href="../assets/css/reservas.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/assets/css/reservas.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Navegação administrativa padrão */
+        .admin-navigation {
+            background: linear-gradient(135deg, #008080, #006666);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .nav-brand {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .nav-logout {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-logout:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        /* Estilos para página sem dados */
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .no-data i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        /* Estilização adicional para garantir que elementos sejam exibidos corretamente */
+        .container {
+            margin: 2rem auto;
+            max-width: 1200px;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stats-summary {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+            margin: 0.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #38b2ac;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .filter-tab {
+            background: #6c757d;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .filter-tab:hover {
+            background: #38b2ac;
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+        
+        .filter-tab.active {
+            background: #38b2ac;
+        }
+        
+        .reservations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .reservation-card {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1.5rem;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .reservation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .back-button {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .btn-back {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Estilos para status de reserva */
+        .status-em.andamento, .status-em_andamento {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-negada {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <div style="margin-bottom: 1rem;">
-            <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.3s ease;">
-                <i class="fas fa-arrow-left"></i> Voltar para Painel do Administrador
-            </a>
+    <!-- Navegação administrativa padrão -->
+    <nav class="admin-navigation">
+        <div class="nav-container">
+            <div class="nav-content">
+                <!-- Logo/Home -->
+                <div>
+                    <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" class="nav-brand">
+                        <i class="fas fa-bicycle"></i> ShareBike Admin
+                    </a>
+                </div>
+                
+                <!-- Links de Navegação -->
+                <div class="nav-links">
+                    <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" class="nav-link">
+                        <i class="fas fa-home"></i> Painel do Adm
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/UsuarioController" class="nav-link">
+                        <i class="fas fa-users-cog"></i> Gestão Usuários
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/BicicletaController" class="nav-link">
+                        <i class="fas fa-bicycle"></i> Gestão Bicicletas
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/ReservaController" class="nav-link active">
+                        <i class="fas fa-calendar-check"></i> Gestão Reservas
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/FeedbackController" class="nav-link">
+                        <i class="fas fa-star"></i> Feedbacks
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/RankingController" class="nav-link">
+                        <i class="fas fa-chart-line"></i> Rankings
+                    </a>
+                    
+                    <!-- Logout -->
+                    <form action="<%=request.getContextPath()%>/UsuarioController" method="post" style="display: inline-block; margin: 0;">
+                        <input type="hidden" name="action" value="logout">
+                        <button type="submit" class="nav-logout">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-        <h1><i class="fas fa-calendar-check"></i> Gestão de Reservas - Administrador</h1>
-    </header>
+    </nav>
+
+    <!-- Cabeçalho da página -->
+    <div class="page-header" style="background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%); color: white; padding: 1.5rem; text-align: center; font-size: 1.8rem;">
+        <i class="fas fa-calendar-check"></i> Gestão de Reservas - Administrador
+    </div>
     
     <div class="container">
-        <nav class="nav">
-            <a href="<%=request.getContextPath()%>/pages/bicicletasAdm.jsp"><i class="fas fa-bicycle"></i> Bicicletas</a>
-            <a href="<%=request.getContextPath()%>/pages/reservasAdm.jsp"><i class="fas fa-calendar-check"></i> Reservas</a>
-            <a href="<%=request.getContextPath()%>/pages/gestaoUsuario.jsp"><i class="fas fa-users"></i> Usuários</a>
-            <a href="<%=request.getContextPath()%>/pages/feedbackAdm.jsp"><i class="fas fa-comments"></i> Feedbacks</a>
-            <a href="<%=request.getContextPath()%>/pages/rankingAdm.jsp"><i class="fas fa-trophy"></i> Ranking</a>
-        </nav>
+        <%
+        List<Reserva> listaReservas = (List<Reserva>) request.getAttribute("listaReservas");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         
-        <!-- Estatísticas Resumidas -->
+        // DEBUG: Verificar se os atributos estão chegando
+        System.out.println("=== DEBUG JSP reservasAdm ===");
+        System.out.println("listaReservas size: " + (listaReservas != null ? listaReservas.size() : "NULL"));
+        
+        // Usar estatísticas gerais vindas do controller (sempre todas as reservas)
+        Integer totalGeral = (Integer) request.getAttribute("totalGeral");
+        Integer pendentesGeral = (Integer) request.getAttribute("pendentesGeral");
+        Integer confirmadaGeral = (Integer) request.getAttribute("confirmadasGeral");
+        Integer emAndamentoGeral = (Integer) request.getAttribute("emAndamentoGeral");
+        Integer finalizadasGeral = (Integer) request.getAttribute("finalizadasGeral");
+        Integer negadasGeral = (Integer) request.getAttribute("negadasGeral");
+        String statusFiltro = (String) request.getAttribute("statusFiltro");
+        
+        System.out.println("Atributos recebidos do controller:");
+        System.out.println("- totalGeral: " + totalGeral);
+        System.out.println("- pendentesGeral: " + pendentesGeral);
+        System.out.println("- confirmadaGeral: " + confirmadaGeral);
+        System.out.println("- emAndamentoGeral: " + emAndamentoGeral);
+        System.out.println("- finalizadasGeral: " + finalizadasGeral);
+        System.out.println("- negadasGeral: " + negadasGeral);
+        System.out.println("- statusFiltro: " + statusFiltro);
+        
+        // Usar valores padrão se os atributos não estiverem disponíveis
+        int totalReservas = totalGeral != null ? totalGeral : 0;
+        int pendentes = pendentesGeral != null ? pendentesGeral : 0;
+        int confirmadas = confirmadaGeral != null ? confirmadaGeral : 0;
+        int emAndamento = emAndamentoGeral != null ? emAndamentoGeral : 0;
+        int finalizadas = finalizadasGeral != null ? finalizadasGeral : 0;
+        int negadas = negadasGeral != null ? negadasGeral : 0;
+        
+        // FALLBACK: Se os valores do controller estão zerados, calcular baseado na lista atual
+        if (totalReservas == 0 && listaReservas != null && !listaReservas.isEmpty()) {
+            System.out.println("⚠️ FALLBACK: Calculando estatísticas no JSP pois controller retornou zero");
+            totalReservas = listaReservas.size();
+        }
+        
+        // Informações sobre o filtro atual
+        int totalFiltradas = listaReservas != null ? listaReservas.size() : 0;
+        String tituloFiltro = "Todas as Reservas";
+        if (statusFiltro != null && !statusFiltro.isEmpty()) {
+            switch (statusFiltro.toUpperCase()) {
+                case "PENDENTE": tituloFiltro = "Reservas Pendentes"; break;
+                case "CONFIRMADA": tituloFiltro = "Reservas Confirmadas"; break;
+                case "EM ANDAMENTO": tituloFiltro = "Reservas em Andamento"; break;
+                case "FINALIZADA": tituloFiltro = "Reservas Finalizadas"; break;
+                case "NEGADA": tituloFiltro = "Reservas Negadas"; break;
+                default: tituloFiltro = "Reservas (" + statusFiltro + ")"; break;
+            }
+        }
+        %>
+        
+        <!-- Estatísticas Resumidas do Sistema Completo -->
         <div class="stats-summary">
-            <h3><i class="fas fa-chart-bar"></i> Estatísticas do Sistema</h3>
+            <h3><i class="fas fa-chart-bar"></i> Estatísticas do Sistema Completo</h3>
             <div class="stats-row">
                 <div class="stat-item">
-                    <div class="stat-number">47</div>
+                    <div class="stat-number"><%=totalReservas%></div>
                     <div class="stat-label">Total de Reservas</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">12</div>
+                    <div class="stat-number"><%=pendentes%></div>
                     <div class="stat-label">Pendentes</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">8</div>
-                    <div class="stat-label">Ativas</div>
+                    <div class="stat-number"><%=confirmadas%></div>
+                    <div class="stat-label">Confirmadas</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">23</div>
+                    <div class="stat-number"><%=emAndamento%></div>
+                    <div class="stat-label">Em Andamento</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number"><%=finalizadas%></div>
                     <div class="stat-label">Finalizadas</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">4</div>
-                    <div class="stat-label">Canceladas</div>
+                    <div class="stat-number"><%=negadas%></div>
+                    <div class="stat-label">Negadas</div>
                 </div>
             </div>
         </div>
         
+        <!-- Informações sobre o filtro atual -->
+        <% if (statusFiltro != null && !statusFiltro.isEmpty()) { %>
+        <div class="filter-info" style="background: #e3f2fd; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #2196f3;">
+            <h4 style="margin: 0 0 0.5rem 0; color: #1976d2;">
+                <i class="fas fa-filter"></i> Filtro Ativo: <%=tituloFiltro%>
+            </h4>
+            <p style="margin: 0; color: #424242;">
+                Exibindo <%=totalFiltradas%> de <%=totalReservas%> reservas do sistema
+                <a href="<%=request.getContextPath()%>/ReservaController" style="margin-left: 15px; color: #1976d2; text-decoration: none;">
+                    <i class="fas fa-times-circle"></i> Remover filtro
+                </a>
+            </p>
+        </div>
+        <% } %>
+        
         <!-- Filtros por Status -->
         <div class="filter-tabs">
-            <button class="filter-tab active" onclick="filterReservations('todas')">
-                <i class="fas fa-list"></i> Todas (47)
-            </button>
-            <button class="filter-tab" onclick="filterReservations('pendentes')">
-                <i class="fas fa-clock"></i> Pendentes (12)
-            </button>
-            <button class="filter-tab" onclick="filterReservations('ativas')">
-                <i class="fas fa-play-circle"></i> Ativas (8)
-            </button>
-            <button class="filter-tab" onclick="filterReservations('finalizadas')">
-                <i class="fas fa-check-circle"></i> Finalizadas (23)
-            </button>
-            <button class="filter-tab" onclick="filterReservations('canceladas')">
-                <i class="fas fa-times-circle"></i> Canceladas (4)
-            </button>
+            <a href="<%=request.getContextPath()%>/ReservaController" class="filter-tab <%=(statusFiltro == null || statusFiltro.isEmpty()) ? "active" : ""%>">
+                <i class="fas fa-list"></i> Todas (<%=totalReservas%>)
+            </a>
+            <a href="<%=request.getContextPath()%>/ReservaController?status=PENDENTE" class="filter-tab <%="PENDENTE".equals(statusFiltro) ? "active" : ""%>">
+                <i class="fas fa-clock"></i> Pendentes (<%=pendentes%>)
+            </a>
+            <a href="<%=request.getContextPath()%>/ReservaController?status=CONFIRMADA" class="filter-tab <%="CONFIRMADA".equals(statusFiltro) ? "active" : ""%>">
+                <i class="fas fa-check-circle"></i> Confirmadas (<%=confirmadas%>)
+            </a>
+            <a href="<%=request.getContextPath()%>/ReservaController?status=EM ANDAMENTO" class="filter-tab <%="EM ANDAMENTO".equals(statusFiltro) ? "active" : ""%>">
+                <i class="fas fa-running"></i> Em Andamento (<%=emAndamento%>)
+            </a>
+            <a href="<%=request.getContextPath()%>/ReservaController?status=FINALIZADA" class="filter-tab <%="FINALIZADA".equals(statusFiltro) ? "active" : ""%>">
+                <i class="fas fa-flag-checkered"></i> Finalizadas (<%=finalizadas%>)
+            </a>
+            <a href="<%=request.getContextPath()%>/ReservaController?status=NEGADA" class="filter-tab <%="NEGADA".equals(statusFiltro) ? "active" : ""%>">
+                <i class="fas fa-times-circle"></i> Negadas (<%=negadas%>)
+            </a>
         </div>
         
         <!-- Lista de Reservas -->
         <div class="reservations-list">
-            <!-- Reserva Pendente 1 -->
-            <div class="reservation-card" data-status="pendentes">
+            <%
+            if (listaReservas != null && !listaReservas.isEmpty()) {
+                for (Reserva reserva : listaReservas) {
+                    String statusClass = "status-" + reserva.getStatus_reserv().toLowerCase();
+                    String statusText = reserva.getStatus_reserv();
+                    
+                    // Traduzir status para exibição mais amigável
+                    switch(statusText.toUpperCase()) {
+                        case "CONFIRMADA":
+                            statusText = "Confirmada";
+                            statusClass = "status-confirmada";
+                            break;
+                        case "PENDENTE":
+                            statusText = "Pendente";
+                            statusClass = "status-pendente";
+                            break;
+                        case "EM ANDAMENTO":
+                            statusText = "Em Andamento";
+                            statusClass = "status-em-andamento";
+                            break;
+                        case "FINALIZADA":
+                            statusText = "Finalizada";
+                            statusClass = "status-finalizada";
+                            break;
+                        case "NEGADA":
+                            statusText = "Negada";
+                            statusClass = "status-negada";
+                            break;
+                    }
+                    
+                    // Calcular duração
+                    long duracaoDias = ChronoUnit.DAYS.between(reserva.getDataCheckIn_reserv(), reserva.getDataCheckOut_reserv());
+                    String duracaoTexto;
+                    
+                    if (duracaoDias > 0) {
+                        duracaoTexto = duracaoDias + (duracaoDias == 1 ? " dia" : " dias");
+                    } else {
+                        long duracaoHoras = ChronoUnit.HOURS.between(reserva.getDataCheckIn_reserv(), reserva.getDataCheckOut_reserv());
+                        duracaoTexto = duracaoHoras + (duracaoHoras == 1 ? " hora" : " horas");
+                    }
+            %>
+            <div class="reservation-card">
                 <div class="reservation-header">
-                    <div class="reservation-id">#RSV-2025-001</div>
-                    <div class="reservation-status status-pendente">Pendente</div>
+                    <div class="reservation-id">#RSV-<%=reserva.getId_reserv()%></div>
+                    <div class="reservation-status <%=statusClass%>"><%=statusText%></div>
                 </div>
                 <div class="reservation-content">
-                    <img src="../assets/images/bike1.jpg" alt="Mountain Explorer" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/38b2ac/ffffff?text=Bike'">
+                    <img src="https://via.placeholder.com/200x150/38b2ac/ffffff?text=<%=reserva.getBicicleta().getFoto_bike()%>" alt="<%=reserva.getBicicleta().getFoto_bike()%>" 
+                         class="bike-image">
                     <div class="reservation-details">
-                        <div class="bike-name">Mountain Explorer MX-2024</div>
+                        <div class="bike-name"><%=reserva.getBicicleta().getNome_bike()%></div>
                         <div class="detail-row">
                             <i class="fas fa-user"></i>
-                            <span>Locatário: Ana Silva (ana.silva@email.com)</span>
+                            <span>Locatário: <%=reserva.getUsuario().getNomeRazaoSocial_user()%> (<%=reserva.getUsuario().getEmail_user()%>)</span>
                         </div>
                         <div class="detail-row">
                             <i class="fas fa-user-tie"></i>
-                            <span>Locador: João Santos (joao.santos@email.com)</span>
+                            <span>Locador: <%=reserva.getBicicleta().getUsuario().getNomeRazaoSocial_user()%> (<%=reserva.getBicicleta().getUsuario().getEmail_user()%>)</span>
                         </div>
                         <div class="detail-row">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>Local: Vila Madalena, São Paulo - SP</span>
+                            <span>Local: <%=reserva.getBicicleta().getLocalEntr_bike()%></span>
                         </div>
                         <div class="detail-row">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>Duração: 3 dias</span>
+                            <i class="fas fa-clock"></i>
+                            <span>Duração: <%=duracaoTexto%></span>
                         </div>
                         <div class="reservation-dates">
                             <div class="dates-row">
                                 <div class="date-info">
                                     <div class="date-label">Check-in</div>
-                                    <div class="date-value">10/08/2025 14:00</div>
+                                    <div class="date-value"><%=reserva.getDataCheckIn_reserv().format(formatter)%></div>
                                 </div>
                                 <div class="date-info">
                                     <div class="date-label">Check-out</div>
-                                    <div class="date-value">13/08/2025 14:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Duração</div>
-                                    <div class="date-value">3 dias</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="#" class="btn btn-info" onclick="viewDetails('RSV-2025-001')">
-                                <i class="fas fa-eye"></i> Detalhes
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="contactUsers('RSV-2025-001')">
-                                <i class="fas fa-envelope"></i> Contatar Usuários
-                            </a>
-                            <a href="#" class="btn btn-warning" onclick="mediateIssue('RSV-2025-001')">
-                                <i class="fas fa-gavel"></i> Mediar Conflito
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Reserva Ativa 1 -->
-            <div class="reservation-card" data-status="ativas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-2025-002</div>
-                    <div class="reservation-status status-ativa">Em Andamento</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/bike2.jpg" alt="Speed Urbana" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/007bff/ffffff?text=Bike'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Speed Urbana SP-2024</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Locatário: Carlos Oliveira (carlos.oliveira@email.com)</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-user-tie"></i>
-                            <span>Locador: Maria Santos (maria.santos@email.com)</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Local: Copacabana, Rio de Janeiro - RJ</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>Duração: 2 dias</span>
-                        </div>
-                        <div class="reservation-dates">
-                            <div class="dates-row">
-                                <div class="date-info">
-                                    <div class="date-label">Check-in</div>
-                                    <div class="date-value">07/08/2025 09:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Check-out</div>
-                                    <div class="date-value">09/08/2025 18:00</div>
+                                    <div class="date-value"><%=reserva.getDataCheckOut_reserv().format(formatter)%></div>
                                 </div>
                                 <div class="date-info">
                                     <div class="date-label">Status</div>
-                                    <div class="date-value">Em uso</div>
+                                    <div class="date-value"><%=statusText%></div>
                                 </div>
                             </div>
                         </div>
                         <div class="reservation-actions">
-                            <a href="#" class="btn btn-info" onclick="viewDetails('RSV-2025-002')">
-                                <i class="fas fa-eye"></i> Detalhes
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="trackReservation('RSV-2025-002')">
-                                <i class="fas fa-map"></i> Acompanhar
-                            </a>
-                            <a href="#" class="btn btn-warning" onclick="sendReminder('RSV-2025-002')">
-                                <i class="fas fa-bell"></i> Lembrete
-                            </a>
+                            <%
+                            if ("FINALIZADA".equals(reserva.getStatus_reserv())) {
+                            %>
+                                <a href="<%=request.getContextPath()%>/FeedbackController?action=listar-para-detalhes&cpfCnpjAvaliado=<%=reserva.getUsuario().getCpfCnpj_user()%>" class="btn btn-success">
+                                    <i class="fas fa-comments"></i> Ver Feedback
+                                </a>
+                            <%
+                            }
+                            %>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Reserva Finalizada 1 -->
-            <div class="reservation-card" data-status="finalizadas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-2025-003</div>
-                    <div class="reservation-status status-finalizada">Finalizada</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/bike3.jpg" alt="Urbana City" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/28a745/ffffff?text=Bike'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Urbana City UB-2024</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Locatário: Pedro Costa (pedro.costa@email.com)</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-user-tie"></i>
-                            <span>Locador: Ana Paula (ana.paula@email.com)</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Local: Savassi, Belo Horizonte - MG</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Concluída em: 05/08/2025 - Avaliação: 4.5/5</span>
-                        </div>
-                        <div class="reservation-dates">
-                            <div class="dates-row">
-                                <div class="date-info">
-                                    <div class="date-label">Check-in</div>
-                                    <div class="date-value">03/08/2025 10:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Check-out</div>
-                                    <div class="date-value">05/08/2025 16:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Duração</div>
-                                    <div class="date-value">2 dias</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="#" class="btn btn-info" onclick="viewDetails('RSV-2025-003')">
-                                <i class="fas fa-eye"></i> Detalhes
-                            </a>
-                            <a href="#" class="btn btn-success" onclick="viewFeedback('RSV-2025-003')">
-                                <i class="fas fa-comments"></i> Ver Feedback
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="viewPayment('RSV-2025-003')">
-                                <i class="fas fa-receipt"></i> Pagamento
-                            </a>
-                        </div>
-                    </div>
-                </div>
+            <%
+                }
+            } else {
+            %>
+            <div class="no-data">
+                <i class="fas fa-calendar-times"></i>
+                <h3>Nenhuma reserva encontrada</h3>
+                <p>Não há reservas para exibir no momento.</p>
             </div>
-            
-            <!-- Reserva Cancelada 1 -->
-            <div class="reservation-card" data-status="canceladas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-2025-004</div>
-                    <div class="reservation-status status-cancelada">Cancelada</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/bike4.jpg" alt="Dobrável Compacta" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/dc3545/ffffff?text=Bike'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Dobrável Compacta DB-2024</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Locatário: Luisa Ferreira (luisa.ferreira@email.com)</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-user-tie"></i>
-                            <span>Locador: Roberto Silva (roberto.silva@email.com)</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-times-circle"></i>
-                            <span>Motivo: Problema técnico na bicicleta</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-calendar"></i>
-                            <span>Cancelada em: 06/08/2025 11:30</span>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="#" class="btn btn-info" onclick="viewDetails('RSV-2025-004')">
-                                <i class="fas fa-eye"></i> Detalhes
-                            </a>
-                            <a href="#" class="btn btn-warning" onclick="viewCancellationReason('RSV-2025-004')">
-                                <i class="fas fa-question-circle"></i> Motivo
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="processRefund('RSV-2025-004')">
-                                <i class="fas fa-undo"></i> Reembolso
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <%
+            }
+            %>
         </div>
         
         <div class="back-button">
@@ -300,71 +538,8 @@
     </footer>
     
     <script>
-        function filterReservations(status) {
-            // Remove active class from all tabs
-            document.querySelectorAll('.filter-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Show/hide reservation cards
-            document.querySelectorAll('.reservation-card').forEach(card => {
-                if (status === 'todas' || card.dataset.status === status) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-        
-        function viewDetails(reservationId) {
-            alert('Visualizar detalhes da reserva: ' + reservationId);
-            // Implementar redirecionamento para página de detalhes
-        }
-        
-        function contactUsers(reservationId) {
-            alert('Contatar usuários da reserva: ' + reservationId);
-            // Implementar sistema de mensagens
-        }
-        
-        function mediateIssue(reservationId) {
-            alert('Mediar conflito da reserva: ' + reservationId);
-            // Implementar sistema de mediação
-        }
-        
-        function trackReservation(reservationId) {
-            alert('Acompanhar reserva ativa: ' + reservationId);
-            // Implementar sistema de tracking
-        }
-        
-        function sendReminder(reservationId) {
-            if (confirm('Enviar lembrete para os usuários desta reserva?')) {
-                alert('Lembrete enviado para reserva: ' + reservationId);
-            }
-        }
-        
-        function viewFeedback(reservationId) {
-            alert('Ver feedback da reserva: ' + reservationId);
-            // Implementar visualização de feedback
-        }
-        
-        function viewPayment(reservationId) {
-            alert('Ver informações de pagamento da reserva: ' + reservationId);
-            // Implementar visualização de pagamento
-        }
-        
-        function viewCancellationReason(reservationId) {
-            alert('Ver motivo do cancelamento da reserva: ' + reservationId);
-            // Implementar visualização do motivo
-        }
-        
-        function processRefund(reservationId) {
-            if (confirm('Processar reembolso para esta reserva?')) {
-                alert('Processando reembolso para reserva: ' + reservationId);
-            }
-        }
+        // Funções futuras para funcionalidades administrativas
+        // Mantidas para implementação posterior se necessário
     </script>
 </body>
 </html>

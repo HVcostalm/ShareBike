@@ -49,13 +49,24 @@ public class BicicletaDAO extends BaseDAO{
 			conexao = Conexao.getConnection();
 			sql = conexao.prepareStatement(update);
 			
+			// Debug da avaliação
+			System.out.println("DEBUG - Bicicleta ID: " + bicicleta.getId_bike() + ", Avaliação: " + bicicleta.getAvaliacao_bike());
+			
 			sql.setString(1, bicicleta.getNome_bike());
 			sql.setString(2, bicicleta.getFoto_bike());
 			sql.setString(3, bicicleta.getLocalEntr_bike());
 			sql.setString(4, bicicleta.getChassi_bike());
 			sql.setString(5, bicicleta.getEstadoConserv_bike());
 			sql.setString(6, bicicleta.getTipo_bike());
-			sql.setFloat(7, bicicleta.getAvaliacao_bike());
+			
+			// Tratar avaliação nula
+			Float avaliacao = bicicleta.getAvaliacao_bike();
+			if (avaliacao != null) {
+				sql.setFloat(7, avaliacao);
+			} else {
+				sql.setFloat(7, 0.0f); // Valor padrão se for null
+			}
+			
 			sql.setString(8, bicicleta.getUsuario().getCpfCnpj_user());
 			sql.setInt(9, bicicleta.getId_bike());
 			linha = sql.executeUpdate();
@@ -90,7 +101,10 @@ public class BicicletaDAO extends BaseDAO{
                 bike.setChassi_bike(rset.getString("chassi_bike"));
                 bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
                 bike.setTipo_bike(rset.getString("tipo_bike"));
-                bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+                
+                // Verificar se avaliacao_bike é NULL para não retornar 0.0f
+                Float avaliacao = rset.getObject("avaliacao_bike", Float.class);
+                bike.setAvaliacao_bike(avaliacao);
 
                 Usuario usuario = new Usuario();
                 usuario.setCpfCnpj_user(rset.getString("Usuario"));
@@ -127,7 +141,10 @@ public class BicicletaDAO extends BaseDAO{
  				bike.setChassi_bike(rset.getString("chassi_bike"));
  				bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
  				bike.setTipo_bike(rset.getString("tipo_bike"));
- 				bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+ 				
+ 				// Verificar se avaliacao_bike é NULL para não retornar 0.0f
+                Float avaliacao = rset.getObject("avaliacao_bike", Float.class);
+                bike.setAvaliacao_bike(avaliacao);
 
  				String cpfCnpjUsuario = rset.getString("Usuario");
 
@@ -155,7 +172,9 @@ public class BicicletaDAO extends BaseDAO{
 				        SELECT AVG(f.avaliacaoBike_feedb)
 				        FROM Feedback f
 				        INNER JOIN Reserva r ON f.Reserva = r.id_reserv
-				        WHERE r.Bicicleta = ? AND f.avaliador_Usuario = r.Usuario
+				        WHERE r.Bicicleta = ? 
+				        AND f.avaliador_Usuario = r.Usuario
+				        AND f.avaliacaoBike_feedb > 0
 				    )
 				    WHERE id_bike = ?
 				""";
@@ -182,7 +201,9 @@ public class BicicletaDAO extends BaseDAO{
  	
 	// Listar todas as bicicletas
 	public List<Bicicleta> listarBicicletas() {
-		String select = "SELECT * FROM Bicicleta";
+		String select = "SELECT b.*, u.nomeRazaoSocial_user, u.telefone_user, u.cidade_user " +
+		               "FROM Bicicleta b " +
+		               "JOIN Usuario u ON b.Usuario = u.cpfCnpj_user";
 		List<Bicicleta> bicicletas = new ArrayList<>();
 
 		try {
@@ -200,10 +221,16 @@ public class BicicletaDAO extends BaseDAO{
 				bike.setChassi_bike(rset.getString("chassi_bike"));
 				bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
 				bike.setTipo_bike(rset.getString("tipo_bike"));
-				bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+				
+				// Verificar se avaliacao_bike é NULL para não retornar 0.0f
+                Float avaliacao = rset.getObject("avaliacao_bike", Float.class);
+                bike.setAvaliacao_bike(avaliacao);
 
 				Usuario usuario = new Usuario();
 				usuario.setCpfCnpj_user(rset.getString("Usuario"));
+				usuario.setNomeRazaoSocial_user(rset.getString("nomeRazaoSocial_user"));
+				usuario.setTelefone_user(rset.getString("telefone_user"));
+				usuario.setCidade_user(rset.getString("cidade_user"));
 				bike.setUsuario(usuario);
 
 				bicicletas.add(bike);
@@ -216,6 +243,30 @@ public class BicicletaDAO extends BaseDAO{
 		}
 
 		return bicicletas;
+	}
+	
+	// Método para verificar se uma bicicleta tem disponibilidade
+	public boolean verificarDisponibilidade(int idBicicleta) {
+		String select = "SELECT COUNT(*) as total FROM Disponibilidade WHERE Bicicleta = ? AND disponivel_disp = true";
+		boolean temDisponibilidade = false;
+		
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(select);
+			sql.setInt(1, idBicicleta);
+			rset = sql.executeQuery();
+			
+			if (rset.next()) {
+				temDisponibilidade = rset.getInt("total") > 0;
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+		
+		return temDisponibilidade;
 	}
 
 	// Lista todas as bicicletas associadas a um determinado usuário.
@@ -240,7 +291,10 @@ public class BicicletaDAO extends BaseDAO{
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
 	            bike.setTipo_bike(rset.getString("tipo_bike"));
-	            bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+	            
+	            // Verificar se avaliacao_bike é NULL para não retornar 0.0f
+                Float avaliacao = rset.getObject("avaliacao_bike", Float.class);
+                bike.setAvaliacao_bike(avaliacao);
 
 	            Usuario usuario = new Usuario();
 	            usuario.setCpfCnpj_user(cpfCnpj_user);
@@ -314,7 +368,94 @@ public class BicicletaDAO extends BaseDAO{
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
 	            bike.setTipo_bike(rset.getString("tipo_bike"));
-	            bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+	            bike.setAvaliacao_bike(rset.getObject("avaliacao_bike", Float.class));
+
+	            Usuario usuario = new Usuario();
+	            usuario.setCpfCnpj_user(rset.getString("Usuario"));
+	            bike.setUsuario(usuario);
+
+	            bicicletas.add(bike);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+
+	    return bicicletas;
+	}
+	
+	// Método sobrecarregado que exclui bicicletas de um usuário específico (para locatários)
+	public List<Bicicleta> listarBicicletasDisponiveisFiltradas(String cidade, String tipo, String estado, String ordemAvaliacao, String cpfExcluir) {
+	    List<Bicicleta> bicicletas = new ArrayList<>();
+
+	    StringBuilder sqlBuilder = new StringBuilder();
+	    sqlBuilder
+	        .append("SELECT DISTINCT b.* ")
+	        .append("FROM Bicicleta b ")
+	        .append("JOIN Usuario u ON b.Usuario = u.cpfCnpj_user ")
+	        .append("JOIN Disponibilidade d ON b.id_bike = d.Bicicleta ")
+	        .append("WHERE d.disponivel_disp = true ");
+
+	    // Excluir bicicletas do próprio usuário (evita que locatário veja suas próprias bikes)
+	    if (cpfExcluir != null && !cpfExcluir.isEmpty()) {
+	        sqlBuilder.append("AND b.Usuario != ? ");
+	    }
+
+	    // Filtros opcionais
+	    if (cidade != null && !cidade.isEmpty()) {
+	        sqlBuilder.append("AND u.cidade_user = ? ");
+	    }
+	    if (tipo != null && !tipo.isEmpty()) {
+	        sqlBuilder.append("AND b.tipo_bike = ? ");
+	    }
+	    if (estado != null && !estado.isEmpty()) {
+	        sqlBuilder.append("AND b.estadoConserv_bike = ? ");
+	    }
+
+	    // Ordenação por avaliação
+	    if ("asc".equalsIgnoreCase(ordemAvaliacao)) {
+	        sqlBuilder.append("ORDER BY b.avaliacao_bike ASC");
+	    } else if ("desc".equalsIgnoreCase(ordemAvaliacao)) {
+	        sqlBuilder.append("ORDER BY b.avaliacao_bike DESC");
+	    }
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(sqlBuilder.toString());
+
+	        int index = 1;
+	        
+	        // Configurar parâmetro de exclusão primeiro
+	        if (cpfExcluir != null && !cpfExcluir.isEmpty()) {
+	            sql.setString(index++, cpfExcluir);
+	        }
+	        
+	        // Configurar filtros na ordem correta
+	        if (cidade != null && !cidade.isEmpty()) {
+	            sql.setString(index++, cidade);
+	        }
+	        if (tipo != null && !tipo.isEmpty()) {
+	            sql.setString(index++, tipo);
+	        }
+	        if (estado != null && !estado.isEmpty()) {
+	            sql.setString(index++, estado);
+	        }
+
+	        rset = sql.executeQuery();
+
+	        while (rset.next()) {
+	            Bicicleta bike = new Bicicleta();
+
+	            bike.setId_bike(rset.getInt("id_bike"));
+	            bike.setNome_bike(rset.getString("nome_bike"));
+	            bike.setFoto_bike(rset.getString("foto_bike"));
+	            bike.setLocalEntr_bike(rset.getString("localEntr_bike"));
+	            bike.setChassi_bike(rset.getString("chassi_bike"));
+	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
+	            bike.setTipo_bike(rset.getString("tipo_bike"));
+	            bike.setAvaliacao_bike(rset.getObject("avaliacao_bike", Float.class));
 
 	            Usuario usuario = new Usuario();
 	            usuario.setCpfCnpj_user(rset.getString("Usuario"));
@@ -389,7 +530,7 @@ public class BicicletaDAO extends BaseDAO{
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
 	            bike.setTipo_bike(rset.getString("tipo_bike"));
-	            bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+	            bike.setAvaliacao_bike(rset.getObject("avaliacao_bike", Float.class));
 
 	            // Apenas CPF/CNPJ do usuário
 	            Usuario usuario = new Usuario();
@@ -433,7 +574,7 @@ public class BicicletaDAO extends BaseDAO{
 	            bike.setChassi_bike(rset.getString("chassi_bike"));
 	            bike.setEstadoConserv_bike(rset.getString("estadoConserv_bike"));
 	            bike.setTipo_bike(rset.getString("tipo_bike"));
-	            bike.setAvaliacao_bike(rset.getFloat("avaliacao_bike"));
+	            bike.setAvaliacao_bike(rset.getObject("avaliacao_bike", Float.class));
 
 	            Usuario usuario = new Usuario();
 	            usuario.setCpfCnpj_user(rset.getString("Usuario"));

@@ -1,0 +1,240 @@
+/* CSS específico para reservasLocatario.jsp com novos status */
+
+/* Status específicos conforme banco de dados */
+.status-pendente {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    color: #856404;
+    border-left: 4px solid #ffc107;
+    font-weight: 600;
+}
+
+.status-confirmada {
+    background: linear-gradient(135deg, #d4edda, #a8e6a3);
+    color: #155724;
+    border-left: 4px solid #38b2ac;
+    font-weight: 600;
+}
+
+.status-negada {
+    background: linear-gradient(135deg, #f8d7da, #f5a3a3);
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+    font-weight: 600;
+}
+
+.status-em-andamento {
+    background: linear-gradient(135deg, #cce7ff, #74b9ff);
+    color: #004085;
+    border-left: 4px solid #38b2ac;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+}
+
+.status-finalizada {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    color: #6c757d;
+    border-left: 4px solid #6c757d;
+    font-weight: 600;
+}
+
+.status-indefinido {
+    background: linear-gradient(135deg, #e2e3e5, #ced4da);
+    color: #495057;
+    border-left: 4px solid #adb5bd;
+    font-weight: 600;
+}
+
+/* Animação para status em andamento */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+/* Melhorias nos filtros */
+.filter-tab {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.filter-tab:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.filter-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #38b2ac, #0d9488);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+/* Cards de reserva aprimorados */
+.reservation-card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.reservation-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Indicadores visuais para cada status */
+.reservation-card[data-status="pendentes"] {
+    border-left: 5px solid #ffc107;
+}
+
+.reservation-card[data-status="confirmadas"] {
+    border-left: 5px solid #38b2ac;
+}
+
+.reservation-card[data-status="negadas"] {
+    border-left: 5px solid #dc3545;
+}
+
+.reservation-card[data-status="em-andamento"] {
+    border-left: 5px solid #38b2ac;
+}
+
+.reservation-card[data-status="finalizadas"] {
+    border-left: 5px solid #6c757d;
+}
+
+/* Ações específicas por status */
+.btn-negada {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-negada:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-1px);
+    color: white;
+}
+
+.btn-em-andamento {
+    background: linear-gradient(135deg, #38b2ac, #0d9488);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-em-andamento:hover {
+    background: linear-gradient(135deg, #319795, #0d9488);
+    transform: translateY(-1px);
+    color: white;
+}
+
+/* Estatísticas aprimoradas */
+.stats-summary {
+    background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #38b2ac, #0d9488);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Responsividade aprimorada */
+@media (max-width: 768px) {
+    .filter-tabs {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .filter-tab {
+        min-width: calc(50% - 0.25rem);
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-row {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+    }
+    
+    .reservation-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .reservation-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Melhorias na acessibilidade */
+.btn:focus,
+.filter-tab:focus {
+    outline: 2px solid #38b2ac;
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #38b2ac;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

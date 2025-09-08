@@ -1,411 +1,532 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="java.util.List" %>
+<%@ page import="br.com.sharebike.model.Ranking" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Ranking - Administrador</title>
-    <link rel="stylesheet" href="../assets/css/ranking.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/assets/css/ranking.css?v=20250820-2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Navegação administrativa padrão */
+        .admin-navigation {
+            background: linear-gradient(135deg, #008080, #006666);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .nav-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .nav-brand {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .nav-link.active {
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .nav-logout {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-logout:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <div style="margin-bottom: 1rem;">
-            <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" style="background: linear-gradient(135deg, #6c757d, #495057); color: white; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600; transition: all 0.3s ease;">
-                <i class="fas fa-arrow-left"></i> Voltar para Painel do Administrador
-            </a>
-        </div>
-        <h1><i class="fas fa-trophy"></i> Sistema de Ranking - Administração</h1>
-    </header>
-    
-    <div class="container">
-        <nav class="nav">
-            <a href="<%=request.getContextPath()%>/pages/bicicletasAdm.jsp"><i class="fas fa-bicycle"></i> Gerenciar Bicicletas</a>
-            <a href="<%=request.getContextPath()%>/pages/reservasAdm.jsp"><i class="fas fa-calendar-check"></i> Gerenciar Reservas</a>
-            <a href="<%=request.getContextPath()%>/pages/feedbackAdm.jsp"><i class="fas fa-comment-dots"></i> Gerenciar Feedbacks</a>
-            <a href="<%=request.getContextPath()%>/pages/rankingAdm.jsp"><i class="fas fa-trophy"></i> Sistema de Ranking</a>
-            <a href="<%=request.getContextPath()%>/pages/gestaoUsuario.jsp"><i class="fas fa-users"></i> Gestão de Usuários</a>
-        </nav>
-        
-        <!-- Dashboard de Estatísticas -->
-        <div class="stats-dashboard">
-            <h2><i class="fas fa-chart-bar"></i> Estatísticas Gerais do Sistema</h2>
-            <div class="dashboard-grid">
-                <div class="dashboard-stat">
-                    <div class="dashboard-value">247</div>
-                    <div class="dashboard-label">Usuários Ativos</div>
+    <!-- Navegação administrativa padrão -->
+    <nav class="admin-navigation">
+        <div class="nav-container">
+            <div class="nav-content">
+                <!-- Logo/Home -->
+                <div>
+                    <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" class="nav-brand">
+                        <i class="fas fa-bicycle"></i> ShareBike Admin
+                    </a>
                 </div>
-                <div class="dashboard-stat">
-                    <div class="dashboard-value">1,823</div>
-                    <div class="dashboard-label">Reservas Totais</div>
-                </div>
-                <div class="dashboard-stat">
-                    <div class="dashboard-value">4.7</div>
-                    <div class="dashboard-label">Avaliação Média</div>
-                </div>
-                <div class="dashboard-stat">
-                    <div class="dashboard-value">89%</div>
-                    <div class="dashboard-label">Taxa de Sucesso</div>
+                
+                <!-- Links de Navegação -->
+                <div class="nav-links">
+                    <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" class="nav-link">
+                        <i class="fas fa-home"></i> Painel do Adm
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/UsuarioController" class="nav-link">
+                        <i class="fas fa-users-cog"></i> Gestão Usuários
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/BicicletaController" class="nav-link">
+                        <i class="fas fa-bicycle"></i> Gestão Bicicletas
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/ReservaController" class="nav-link">
+                        <i class="fas fa-calendar-check"></i> Gestão Reservas
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/FeedbackController" class="nav-link">
+                        <i class="fas fa-star"></i> Feedbacks
+                    </a>
+                    
+                    <a href="<%=request.getContextPath()%>/RankingController" class="nav-link active">
+                        <i class="fas fa-chart-line"></i> Rankings
+                    </a>
+                    
+                    <!-- Logout -->
+                    <form action="<%=request.getContextPath()%>/UsuarioController" method="post" style="display: inline-block; margin: 0;">
+                        <input type="hidden" name="action" value="logout">
+                        <button type="submit" class="nav-logout">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
-        
-        <!-- Filtros -->
-        <div class="filter-tabs">
-            <button class="filter-tab active" onclick="filterRanking('top-geral')">
-                <i class="fas fa-trophy"></i> Top 10 Geral
-            </button>
-            <button class="filter-tab" onclick="filterRanking('top-semana')">
-                <i class="fas fa-fire"></i> Top 10 da Semana
-            </button>
-            <button class="filter-tab" onclick="filterRanking('todos-locatarios')">
-                <i class="fas fa-users"></i> Todos os Locatários
-            </button>
-            <button class="filter-tab" onclick="filterRanking('problematicos')">
-                <i class="fas fa-exclamation-triangle"></i> Usuários Problemáticos
-            </button>
-        </div>
-        
-        <!-- Filtros de Localização para Administrador -->
-        <div class="location-filters" style="background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
-            <h3 style="color: #333; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fas fa-filter"></i> Filtros Administrativos
-            </h3>
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
-                <div style="flex: 1; min-width: 180px;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">País:</label>
-                    <select id="paisFilter" style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" onchange="filterByLocation()">
-                        <option value="">Todos os países</option>
-                        <option value="Brasil">Brasil</option>
-                        <option value="Argentina">Argentina</option>
-                        <option value="Chile">Chile</option>
-                    </select>
+    </nav>
+
+    <!-- Cabeçalho da página -->
+    <div class="page-header" style="background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%); color: white; padding: 1.5rem; text-align: center; font-size: 1.8rem;">
+        <i class="fas fa-chart-line"></i> Sistema de Ranking - Administração
+    </div>
+
+    <main>
+        <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
+            <%
+                List<Ranking> listaRankings = (List<Ranking>) request.getAttribute("listaRankings");
+                List<Ranking> listaRankingTopGeral = (List<Ranking>) request.getAttribute("listaRankingTopGeral");
+                List<Ranking> listaRankingTopSemana = (List<Ranking>) request.getAttribute("listaRankingTopSemana");
+            %>
+            
+            <!-- Dashboard de Estatísticas -->
+            <div class="stats-dashboard">
+                <h2><i class="fas fa-chart-bar"></i> Estatísticas Gerais do Sistema</h2>
+                <div class="dashboard-grid">
+                    <div class="dashboard-stat">
+                        <div class="dashboard-value"><%=listaRankings != null ? listaRankings.size() : 0%></div>
+                        <div class="dashboard-label">Usuários no Ranking</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="dashboard-value"><%=listaRankingTopGeral != null ? listaRankingTopGeral.size() : 0%></div>
+                        <div class="dashboard-label">Top 10 Geral</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <div class="dashboard-value"><%=listaRankingTopSemana != null ? listaRankingTopSemana.size() : 0%></div>
+                        <div class="dashboard-label">Top 10 Semanal</div>
+                    </div>
+                    <div class="dashboard-stat">
+                        <%
+                            double avgPontos = 0;
+                            if (listaRankings != null && !listaRankings.isEmpty()) {
+                                long totalPontos = 0;
+                                for (Ranking r : listaRankings) {
+                                    totalPontos += r.getPontos_rank();
+                                }
+                                avgPontos = (double) totalPontos / listaRankings.size();
+                            }
+                        %>
+                        <div class="dashboard-value"><%=String.format("%.0f", avgPontos)%></div>
+                        <div class="dashboard-label">Média de Pontos</div>
+                    </div>
                 </div>
-                <div style="flex: 1; min-width: 180px;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">Estado:</label>
-                    <select id="estadoFilter" style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" onchange="filterByLocation()">
-                        <option value="">Todos os estados</option>
-                        <option value="SP">São Paulo</option>
-                        <option value="RJ">Rio de Janeiro</option>
-                        <option value="MG">Minas Gerais</option>
-                        <option value="RS">Rio Grande do Sul</option>
-                    </select>
+            </div>
+            
+            <!-- Filtros -->
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterRanking('top-geral')">
+                    <i class="fas fa-trophy"></i> Top 10 Geral
+                </button>
+                <button class="filter-tab" onclick="filterRanking('top-semana')">
+                    <i class="fas fa-fire"></i> Top 10 da Semana
+                </button>
+                <button class="filter-tab" onclick="filterRanking('todos-locatarios')">
+                    <i class="fas fa-users"></i> Todos os Rankings
+                </button>
+            </div>
+            
+            <!-- Filtros de Localização Administrativa -->
+            <div class="location-filters" style="background: white; border-radius: 15px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+                <h3 style="color: #333; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-filter"></i> Filtros por Localização
+                </h3>
+                
+                <form id="filtroForm" action="<%=request.getContextPath()%>/RankingController" method="post" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end;">
+                    <input type="hidden" name="action" value="listar-ranking-filtro">
+                    
+                    <div style="flex: 1; min-width: 180px;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">País:</label>
+                        <input type="text" name="pais" id="paisFilter" placeholder="Ex: Brasil" 
+                               style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;"
+                               value="<%=request.getParameter("pais") != null ? request.getParameter("pais") : ""%>">
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 180px;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">Estado:</label>
+                        <input type="text" name="estado" id="estadoFilter" placeholder="Ex: SP" 
+                               style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;"
+                               value="<%=request.getParameter("estado") != null ? request.getParameter("estado") : ""%>">
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 180px;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">Cidade:</label>
+                        <input type="text" name="cidade" id="cidadeFilter" placeholder="Ex: São Paulo" 
+                               style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;"
+                               value="<%=request.getParameter("cidade") != null ? request.getParameter("cidade") : ""%>">
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="submit" style="background: linear-gradient(135deg, #008080, #006666); color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                        
+                        <button type="button" onclick="clearFilters()" style="background: #6c757d; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                            <i class="fas fa-times"></i> Limpar
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Exibir resultados de filtro se houver -->
+                <%
+                    List<Ranking> listaRankingFiltrado = (List<Ranking>) request.getAttribute("listaRankingFiltrado");
+                    if (listaRankingFiltrado != null) {
+                %>
+                <div style="margin-top: 1rem; padding: 1rem; background: #e8f4f8; border-radius: 8px; border-left: 4px solid #008080;">
+                    <h4 style="color: #008080; margin: 0 0 0.5rem 0;">
+                        <i class="fas fa-info-circle"></i> Resultados do Filtro
+                    </h4>
+                    <p style="margin: 0; color: #666;">
+                        Encontrados <strong><%=listaRankingFiltrado.size()%></strong> registros
+                        <%if (request.getParameter("pais") != null && !request.getParameter("pais").isEmpty()) {%>
+                            para o país "<strong><%=request.getParameter("pais")%></strong>"
+                        <%}%>
+                        <%if (request.getParameter("estado") != null && !request.getParameter("estado").isEmpty()) {%>
+                            no estado "<strong><%=request.getParameter("estado")%></strong>"
+                        <%}%>
+                        <%if (request.getParameter("cidade") != null && !request.getParameter("cidade").isEmpty()) {%>
+                            na cidade "<strong><%=request.getParameter("cidade")%></strong>"
+                        <%}%>
+                    </p>
                 </div>
-                <div style="flex: 1; min-width: 180px;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">Cidade:</label>
-                    <select id="cidadeFilter" style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" onchange="filterByLocation()">
-                        <option value="">Todas as cidades</option>
-                        <option value="São Paulo">São Paulo</option>
-                        <option value="Rio de Janeiro">Rio de Janeiro</option>
-                        <option value="Belo Horizonte">Belo Horizonte</option>
-                        <option value="Porto Alegre">Porto Alegre</option>
-                    </select>
+                <%
+                    }
+                %>
+            </div>
+            
+            <!-- Ranking Lista Dinâmica -->
+            <div class="ranking-list" id="ranking-container">
+                
+                <!-- Seção TOP 10 GERAL -->
+                <div class="ranking-section" id="top-geral-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-trophy"></i> Top 10 - Ranking Geral
+                    </h2>
+                    
+                    <%
+                        if (listaRankingTopGeral != null && !listaRankingTopGeral.isEmpty()) {
+                            for (int i = 0; i < listaRankingTopGeral.size(); i++) {
+                                Ranking ranking = listaRankingTopGeral.get(i);
+                                Usuario usuario = ranking.getUsuario();
+                                
+                                String positionClass = "";
+                                String medal = "";
+                                if (i == 0) {
+                                    positionClass = "gold";
+                                    medal = "🥇";
+                                } else if (i == 1) {
+                                    positionClass = "silver";
+                                    medal = "🥈";
+                                } else if (i == 2) {
+                                    positionClass = "bronze";
+                                    medal = "🥉";
+                                }
+                    %>
+                    <div class="ranking-item" data-category="top-geral">
+                        <div class="ranking-position <%=positionClass%>">
+                            <span class="position-number"><%=i+1%>º</span>
+                            <%if (!medal.isEmpty()) {%>
+                                <span class="medal"><%=medal%></span>
+                            <%}%>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">
+                                <%
+                                    String nomeUsuario = "Usuário não identificado";
+                                    if (usuario != null && usuario.getNomeRazaoSocial_user() != null && !usuario.getNomeRazaoSocial_user().trim().isEmpty()) {
+                                        nomeUsuario = usuario.getNomeRazaoSocial_user();
+                                    }
+                                %>
+                                <%= nomeUsuario %>
+                            </div>
+                            <div class="user-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <%= ranking.getCidade_rank() != null ? ranking.getCidade_rank() : "N/A" %>, 
+                                <%= ranking.getEstado_rank() != null ? ranking.getEstado_rank() : "N/A" %>, 
+                                <%= ranking.getPais_rank() != null ? ranking.getPais_rank() : "N/A" %>
+                            </div>
+                        </div>
+                        <div class="ranking-points">
+                            <div class="points-value">
+                                <%= String.format("%.0f", ranking.getPontos_rank()) %>
+                            </div>
+                            <div class="points-label">pontos</div>
+                        </div>
+                    </div>
+                    <%
+                            }
+                        } else {
+                    %>
+                    <div class="no-data" data-category="top-geral">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Nenhum dado disponível no momento</p>
+                    </div>
+                    <%
+                        }
+                    %>
                 </div>
-                <div style="flex: 1; min-width: 180px;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #555;">Status:</label>
-                    <select id="statusFilter" style="width: 100%; padding: 0.8rem; border: 2px solid #e9ecef; border-radius: 8px; font-size: 1rem;" onchange="filterByStatus()">
-                        <option value="">Todos</option>
-                        <option value="ativo">Ativos</option>
-                        <option value="suspenso">Suspensos</option>
-                        <option value="advertencia">Com Advertência</option>
-                    </select>
+
+                <!-- Seção TOP 10 SEMANAL -->
+                <div class="ranking-section" id="top-semana-section" style="display: none;">
+                    <h2 class="section-title">
+                        <i class="fas fa-calendar-week"></i> Top 10 - Ranking Semanal
+                    </h2>
+                    
+                    <%
+                        if (listaRankingTopSemana != null && !listaRankingTopSemana.isEmpty()) {
+                            for (int i = 0; i < listaRankingTopSemana.size(); i++) {
+                                Ranking ranking = listaRankingTopSemana.get(i);
+                                Usuario usuario = ranking.getUsuario();
+                                
+                                String positionClass = "";
+                                String medal = "";
+                                if (i == 0) {
+                                    positionClass = "gold";
+                                    medal = "🔥";
+                                } else if (i == 1) {
+                                    positionClass = "silver";
+                                    medal = "⚡";
+                                } else if (i == 2) {
+                                    positionClass = "bronze";
+                                    medal = "💫";
+                                }
+                    %>
+                    <div class="ranking-item" data-category="top-semana" style="display: none;">
+                        <div class="ranking-position <%=positionClass%>">
+                            <span class="position-number"><%=i+1%>º</span>
+                            <%if (!medal.isEmpty()) {%>
+                                <span class="medal"><%=medal%></span>
+                            <%}%>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">
+                                <%
+                                    String nomeUsuario = "Usuário não identificado";
+                                    if (usuario != null && usuario.getNomeRazaoSocial_user() != null && !usuario.getNomeRazaoSocial_user().trim().isEmpty()) {
+                                        nomeUsuario = usuario.getNomeRazaoSocial_user();
+                                    }
+                                %>
+                                <%= nomeUsuario %>
+                            </div>
+                            <div class="user-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <%= ranking.getCidade_rank() != null ? ranking.getCidade_rank() : "N/A" %>, 
+                                <%= ranking.getEstado_rank() != null ? ranking.getEstado_rank() : "N/A" %>, 
+                                <%= ranking.getPais_rank() != null ? ranking.getPais_rank() : "N/A" %>
+                            </div>
+                        </div>
+                        <div class="ranking-points">
+                            <div class="points-value">
+                                <%= String.format("%.0f", ranking.getPontosSemana_rank()) %>
+                            </div>
+                            <div class="points-label">pontos na semana</div>
+                        </div>
+                    </div>
+                    <%
+                            }
+                        } else {
+                    %>
+                    <div class="no-data" data-category="top-semana" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Nenhum dado disponível no momento</p>
+                    </div>
+                    <%
+                        }
+                    %>
                 </div>
-                <div>
-                    <button onclick="clearAllFilters()" style="background: #6c757d; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+
+                <!-- Seção TODOS OS RANKINGS -->
+                <div class="ranking-section" id="todos-locatarios-section" style="display: none;">
+                    <h2 class="section-title">
+                        <i class="fas fa-users"></i> Todos os Rankings
+                    </h2>
+                    
+                    <%
+                        if (listaRankings != null && !listaRankings.isEmpty()) {
+                            for (int i = 0; i < listaRankings.size(); i++) {
+                                Ranking ranking = listaRankings.get(i);
+                                Usuario usuario = ranking.getUsuario();
+                    %>
+                    <div class="ranking-item" data-category="todos-locatarios" style="display: none;">
+                        <div class="ranking-position">
+                            <span class="position-number"><%=i+1%>º</span>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">
+                                <%
+                                    String nomeUsuario = "Usuário não identificado";
+                                    if (usuario != null && usuario.getNomeRazaoSocial_user() != null && !usuario.getNomeRazaoSocial_user().trim().isEmpty()) {
+                                        nomeUsuario = usuario.getNomeRazaoSocial_user();
+                                    }
+                                %>
+                                <%= nomeUsuario %>
+                            </div>
+                            <div class="user-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <%= ranking.getCidade_rank() != null ? ranking.getCidade_rank() : "N/A" %>, 
+                                <%= ranking.getEstado_rank() != null ? ranking.getEstado_rank() : "N/A" %>, 
+                                <%= ranking.getPais_rank() != null ? ranking.getPais_rank() : "N/A" %>
+                            </div>
+                        </div>
+                        <div class="ranking-points">
+                            <div class="points-value">
+                                <%= String.format("%.0f", ranking.getPontos_rank()) %>
+                            </div>
+                            <div class="points-label">pontos</div>
+                        </div>
+                    </div>
+                    <%
+                            }
+                        } else {
+                    %>
+                    <div class="no-data" data-category="todos-locatarios" style="display: none;">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Nenhum dado disponível no momento</p>
+                    </div>
+                    <%
+                        }
+                    %>
+                </div>
+                
+                <!-- Seção RESULTADOS FILTRADOS -->
+                <%
+                    if (listaRankingFiltrado != null && !listaRankingFiltrado.isEmpty()) {
+                %>
+                <div class="ranking-section" id="filtrados-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-filter"></i> Resultados Filtrados (<%=listaRankingFiltrado.size()%>)
+                    </h2>
+                    
+                    <%
+                            for (int i = 0; i < listaRankingFiltrado.size(); i++) {
+                                Ranking ranking = listaRankingFiltrado.get(i);
+                                Usuario usuario = ranking.getUsuario();
+                    %>
+                    <div class="ranking-item" data-category="filtrados">
+                        <div class="ranking-position">
+                            <span class="position-number"><%=i+1%>º</span>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name">
+                                <%
+                                    String nomeUsuario = "Usuário não identificado";
+                                    if (usuario != null && usuario.getNomeRazaoSocial_user() != null && !usuario.getNomeRazaoSocial_user().trim().isEmpty()) {
+                                        nomeUsuario = usuario.getNomeRazaoSocial_user();
+                                    }
+                                %>
+                                <%= nomeUsuario %>
+                            </div>
+                            <div class="user-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <%= ranking.getCidade_rank() != null ? ranking.getCidade_rank() : "N/A" %>, 
+                                <%= ranking.getEstado_rank() != null ? ranking.getEstado_rank() : "N/A" %>, 
+                                <%= ranking.getPais_rank() != null ? ranking.getPais_rank() : "N/A" %>
+                            </div>
+                        </div>
+                        <div class="ranking-points">
+                            <div class="points-value">
+                                <%= String.format("%.0f", ranking.getPontos_rank()) %>
+                            </div>
+                            <div class="points-label">pontos</div>
+                        </div>
+                    </div>
+                    <%
+                            }
+                    %>
+                </div>
+                <%
+                    } else if (request.getParameter("action") != null && request.getParameter("action").equals("listar-ranking-filtro")) {
+                %>
+                <div class="no-data">
+                    <i class="fas fa-search"></i>
+                    <h3>Nenhum resultado encontrado</h3>
+                    <p>Não foram encontrados usuários com os critérios de filtro especificados.</p>
+                    <button onclick="clearFilters()" class="btn btn-primary">
                         <i class="fas fa-times"></i> Limpar Filtros
                     </button>
                 </div>
+                <%
+                    }
+                %>
             </div>
         </div>
-        
-        <!-- Ranking Grid -->
-        <div class="ranking-grid">
-            <!-- TOP 10 GERAL - 1º Lugar - Baseado no modelo Ranking -->
-            <div class="ranking-card" data-category="top-geral" data-location="São Paulo,SP,Brasil" data-status="ativo">
-                <div class="ranking-header">
-                    <div class="ranking-position first">1º</div>
-                    <div class="ranking-category">TOP GERAL</div>
-                </div>
-                <div class="user-info">
-                    <img src="../assets/images/user3.jpg" alt="Maria Silva Santos" class="user-avatar" onerror="this.src='https://via.placeholder.com/60x60/dc3545/ffffff?text=MS'">
-                    <div class="user-details">
-                        <h3>Maria Silva Santos</h3>
-                        <div class="user-type">Locatário Premium - ATIVO</div>
-                        <div class="join-date">São Paulo, SP, Brasil - 2.850 pontos</div>
-                    </div>
-                </div>
-                <div class="statistics">
-                    <div class="stat-item">
-                        <span class="stat-value">47</span>
-                        <span class="stat-label">Aluguéis</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">2.850</span>
-                        <span class="stat-label">Pontos Total</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">85</span>
-                        <span class="stat-label">Pontos Semana</span>
-                    </div>
-                </div>
-                <div class="rating-section">
-                    <div class="rating-row">
-                        <span>Avaliação:</span>
-                        <div>
-                            <span class="rating-stars">★★★★★</span>
-                            <span class="rating-value">5.0/5.0</span>
-                        </div>
-                    </div>
-                    <div class="rating-row">
-                        <span>Última Atividade:</span>
-                        <span class="rating-value">Hoje</span>
-                    </div>
-                </div>
-                <div class="achievements">
-                    <span class="achievement gold">👑 Campeão Geral</span>
-                    <span class="achievement">🛡️ Usuário Modelo</span>
-                    <span class="achievement">� Excelência</span>
-                </div>
-                <div class="ranking-actions">
-                    <a href="#" class="btn btn-info" onclick="viewUserProfile('maria.santos')">
-                        <i class="fas fa-user"></i> Ver Perfil
-                    </a>
-                    <a href="#" class="btn btn-success" onclick="promoteUser('maria.santos')">
-                        <i class="fas fa-medal"></i> Destacar
+    </main>
                     </a>
                 </div>
-            </div>
-
-            <!-- TOP 10 GERAL - 2º Lugar -->
-            <div class="ranking-card" data-category="top-geral" data-location="Rio de Janeiro,RJ,Brasil" data-status="ativo">
-                <div class="ranking-header">
-                    <div class="ranking-position second">2º</div>
-                    <div class="ranking-category">TOP GERAL</div>
-                </div>
-                <div class="user-info">
-                    <img src="../assets/images/user4.jpg" alt="João Silva" class="user-avatar" onerror="this.src='https://via.placeholder.com/60x60/ffc107/000000?text=JS'">
-                    <div class="user-details">
-                        <h3>João Silva</h3>
-                        <div class="user-type">Locatário Expert - ATIVO</div>
-                        <div class="join-date">Rio de Janeiro, RJ - 2.180 pontos</div>
-                    </div>
-                </div>
-                <div class="statistics">
-                    <div class="stat-item">
-                        <span class="stat-value">132</span>
-                        <span class="stat-label">Aluguéis</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">2.180</span>
-                        <span class="stat-label">Pontos</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">1</span>
-                        <span class="stat-label">Problemas</span>
-                    </div>
-                </div>
-                <div class="rating-section">
-                    <div class="rating-row">
-                        <span>Avaliação:</span>
-                        <div>
-                            <span class="rating-stars">★★★★★</span>
-                            <span class="rating-value">4.9/5.0</span>
-                        </div>
-                    </div>
-                    <div class="rating-row">
-                        <span>Última Atividade:</span>
-                        <span class="rating-value">Ontem</span>
-                    </div>
-                </div>
-                <div class="achievements">
-                    <span class="achievement silver">🥈 Vice-Campeão</span>
-                    <span class="achievement">⭐ Consistente</span>
-                    <span class="achievement">� Comunicativo</span>
-                </div>
-                <div class="ranking-actions">
-                    <a href="#" class="btn btn-info" onclick="viewUserProfile('joao.silva')">
-                        <i class="fas fa-user"></i> Ver Perfil
-                    </a>
-                    <a href="#" class="btn btn-primary" onclick="sendMessage('joao.silva')">
-                        <i class="fas fa-envelope"></i> Mensagem
-                    </a>
-                </div>
-            </div>
-
-            <!-- TOP 10 DA SEMANA - 1º Lugar -->
-            <div class="ranking-card" data-category="top-semana" data-location="Porto Alegre,RS,Brasil" data-status="ativo">
-                <div class="ranking-header">
-                    <div class="ranking-position first">1º</div>
-                    <div class="ranking-category">TOP DA SEMANA</div>
-                </div>
-                <div class="user-info">
-                    <img src="../assets/images/user7.jpg" alt="Carlos Mendes" class="user-avatar" onerror="this.src='https://via.placeholder.com/60x60/28a745/ffffff?text=CM'">
-                    <div class="user-details">
-                        <h3>Carlos Mendes</h3>
-                        <div class="user-type">Locatário em Alta - ATIVO</div>
-                        <div class="join-date">Porto Alegre, RS - 285 pontos esta semana</div>
-                    </div>
-                </div>
-                <div class="statistics">
-                    <div class="stat-item">
-                        <span class="stat-value">18</span>
-                        <span class="stat-label">Aluguéis Semana</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">285</span>
-                        <span class="stat-label">Pontos Semana</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">0</span>
-                        <span class="stat-label">Problemas</span>
-                    </div>
-                </div>
-                <div class="rating-section">
-                    <div class="rating-row">
-                        <span>Distância Semana:</span>
-                        <span class="rating-value">285 km</span>
-                    </div>
-                    <div class="rating-row">
-                        <span>Crescimento:</span>
-                        <span class="rating-value">+45% vs semana anterior</span>
-                    </div>
-                </div>
-                <div class="achievements">
-                    <span class="achievement gold">� Destaque da Semana</span>
-                    <span class="achievement">⚡ Super Ativo</span>
-                    <span class="achievement">� Em Crescimento</span>
-                </div>
-                <div class="ranking-actions">
-                    <a href="#" class="btn btn-info" onclick="viewUserProfile('carlos.mendes')">
-                        <i class="fas fa-user"></i> Ver Perfil
-                    </a>
-                    <a href="#" class="btn btn-success" onclick="giveReward('carlos.mendes')">
-                        <i class="fas fa-gift"></i> Premiar
-                    </a>
-                </div>
-            </div>
-
-            <!-- TODOS OS LOCATÁRIOS - Participante Normal -->
-            <div class="ranking-card" data-category="todos-locatarios" data-location="Belo Horizonte,MG,Brasil" data-status="advertencia">
-                <div class="ranking-header">
-                    <div class="ranking-position">8º</div>
-                    <div class="ranking-category">LOCATÁRIO</div>
-                </div>
-                <div class="user-info">
-                    <img src="../assets/images/user6.jpg" alt="Ana Costa" class="user-avatar" onerror="this.src='https://via.placeholder.com/60x60/ffc107/000000?text=AC'">
-                    <div class="user-details">
-                        <h3>Ana Costa</h3>
-                        <div class="user-type">Locatário Regular - ADVERTÊNCIA</div>
-                        <div class="join-date">Belo Horizonte, MG - 1.250 pontos</div>
-                    </div>
-                </div>
-                <div class="statistics">
-                    <div class="stat-item">
-                        <span class="stat-value">68</span>
-                        <span class="stat-label">Aluguéis</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">1.250</span>
-                        <span class="stat-label">Pontos</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">3</span>
-                        <span class="stat-label">Problemas</span>
-                    </div>
-                </div>
-                <div class="rating-section">
-                    <div class="rating-row">
-                        <span>Avaliação:</span>
-                        <div>
-                            <span class="rating-stars">★★★☆☆</span>
-                            <span class="rating-value">3.8/5.0</span>
-                        </div>
-                    </div>
-                    <div class="rating-row">
-                        <span>Motivo Advertência:</span>
-                        <span class="rating-value">Atrasos recorrentes</span>
-                    </div>
-                </div>
-                <div class="achievements">
-                    <span class="achievement" style="background: #ffc107; color: #000;">⚠️ Advertência Ativa</span>
-                    <span class="achievement">� Plano de Melhoria</span>
-                </div>
-                <div class="ranking-actions">
-                    <a href="#" class="btn btn-info" onclick="viewUserProfile('ana.costa')">
-                        <i class="fas fa-user"></i> Ver Perfil
-                    </a>
-                    <a href="#" class="btn" style="background: #ffc107; color: #000;" onclick="manageWarning('ana.costa')">
-                        <i class="fas fa-exclamation-triangle"></i> Gerenciar Advertência
-                    </a>
-                </div>
-            </div>
-
-            <!-- Usuário Problemático -->
-            <div class="ranking-card" data-category="problematicos" data-location="Curitiba,PR,Brasil" data-status="suspenso">
-                <div class="ranking-header">
-                    <div class="ranking-position" style="background: linear-gradient(135deg, #dc3545, #c82333);">⚠️</div>
-                    <div class="ranking-category">SUSPENSO</div>
-                </div>
-                <div class="user-info">
-                    <img src="../assets/images/user5.jpg" alt="Pedro Costa" class="user-avatar" onerror="this.src='https://via.placeholder.com/60x60/dc3545/ffffff?text=PC'">
-                    <div class="user-details">
-                        <h3>Pedro Costa</h3>
-                        <div class="user-type">Locatário - SUSPENSO</div>
-                        <div class="join-date">Curitiba, PR - Suspenso até 15/08/2025</div>
-                    </div>
-                </div>
-                <div class="statistics">
-                    <div class="stat-item">
-                        <span class="stat-value">23</span>
-                        <span class="stat-label">Aluguéis</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">450</span>
-                        <span class="stat-label">Pontos</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">8</span>
-                        <span class="stat-label">Problemas</span>
-                    </div>
-                </div>
-                <div class="rating-section">
-                    <div class="rating-row">
-                        <span>Avaliação:</span>
-                        <div>
-                            <span class="rating-stars">★★☆☆☆</span>
-                            <span class="rating-value">2.1/5.0</span>
-                        </div>
-                    </div>
-                    <div class="rating-row">
-                        <span>Motivo Suspensão:</span>
-                        <span class="rating-value">Danos às bicicletas</span>
-                    </div>
-                </div>
-                <div class="achievements">
-                    <span class="achievement" style="background: linear-gradient(135deg, #dc3545, #c82333);">🚫 Suspenso</span>
-                    <span class="achievement" style="background: linear-gradient(135deg, #6c757d, #495057);">� Requer Revisão</span>
-                </div>
-                <div class="ranking-actions">
-                    <a href="#" class="btn btn-info" onclick="viewUserProfile('pedro.costa')">
-                        <i class="fas fa-user"></i> Ver Perfil
-                    </a>
-                    <a href="#" class="btn" style="background: #dc3545; color: white;" onclick="manageSuspension('pedro.costa')">
-                        <i class="fas fa-ban"></i> Gerenciar Suspensão
-                    </a>
-                    <a href="#" class="btn" style="background: #28a745; color: white;" onclick="reviewAccount('pedro.costa')">
-                        <i class="fas fa-gavel"></i> Revisar Conta
-                    </a>
-                </div>
-            </div>
-
             </div>
         </div>
-        
-        <div class="back-button">
-            <a href="<%=request.getContextPath()%>/pages/admDetalhes.jsp" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Voltar ao Painel Admin
-            </a>
-        </div>
+    </div>
     
     <footer>
         <p>&copy; 2025 ShareBike. Todos os direitos reservados.</p>
@@ -421,198 +542,92 @@
             // Add active class to clicked tab
             event.target.classList.add('active');
             
-            // Show/hide ranking cards based on category
-            document.querySelectorAll('.ranking-card').forEach(card => {
-                if (category === 'todos-locatarios') {
-                    card.style.display = 'block';
-                } else if (card.dataset.category === category) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+            // Hide all sections first
+            document.querySelectorAll('.ranking-section').forEach(section => {
+                section.style.display = 'none';
             });
-        }
-        
-        function filterByLocation() {
-            const pais = document.getElementById('paisFilter').value;
-            const estado = document.getElementById('estadoFilter').value;
-            const cidade = document.getElementById('cidadeFilter').value;
             
-            document.querySelectorAll('.ranking-card').forEach(card => {
-                const location = card.dataset.location;
-                if (!location) return;
-                
-                const [cardCidade, cardEstado, cardPais] = location.split(',');
-                
-                let show = true;
-                
-                if (pais && cardPais !== pais) show = false;
-                if (estado && cardEstado !== estado) show = false;
-                if (cidade && cardCidade !== cidade) show = false;
-                
-                card.style.display = show ? 'block' : 'none';
+            // Hide all ranking items and no-data divs
+            document.querySelectorAll('.ranking-item').forEach(item => {
+                item.style.display = 'none';
             });
-        }
-        
-        function filterByStatus() {
-            const status = document.getElementById('statusFilter').value;
             
-            document.querySelectorAll('.ranking-card').forEach(card => {
-                const cardStatus = card.dataset.status;
-                
-                if (!status || cardStatus === status) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
+            document.querySelectorAll('.no-data').forEach(noData => {
+                noData.style.display = 'none';
             });
+            
+            // Show appropriate section and items
+            if (category === 'top-geral') {
+                document.getElementById('top-geral-section').style.display = 'block';
+                document.querySelectorAll('[data-category="top-geral"]').forEach(element => {
+                    element.style.display = 'block';
+                });
+            } else if (category === 'top-semana') {
+                document.getElementById('top-semana-section').style.display = 'block';
+                document.querySelectorAll('[data-category="top-semana"]').forEach(element => {
+                    element.style.display = 'block';
+                });
+            } else if (category === 'todos-locatarios') {
+                document.getElementById('todos-locatarios-section').style.display = 'block';
+                document.querySelectorAll('[data-category="todos-locatarios"]').forEach(element => {
+                    element.style.display = 'block';
+                });
+            }
         }
         
-        function clearAllFilters() {
+        function clearFilters() {
+            // Limpar os campos de filtro
             document.getElementById('paisFilter').value = '';
             document.getElementById('estadoFilter').value = '';
             document.getElementById('cidadeFilter').value = '';
-            document.getElementById('statusFilter').value = '';
             
-            // Show all cards
-            document.querySelectorAll('.ranking-card').forEach(card => {
-                card.style.display = 'block';
-            });
+            // Redirecionar para página sem filtros
+            window.location.href = '<%=request.getContextPath()%>/RankingController';
         }
         
-        function viewUserProfile(username) {
-            alert('Visualizar perfil completo de: ' + username + '\n\n' +
-                  'Informações disponíveis:\n' +
-                  '• Histórico completo de atividades\n' +
-                  '• Dados de contato e localização\n' +
-                  '• Estatísticas detalhadas\n' +
-                  '• Feedbacks recebidos e dados\n' +
-                  '• Relatórios de problemas\n' +
-                  '• Status da conta e advertências');
-        }
-        
-        function promoteUser(username) {
-            if (confirm('Destacar usuário ' + username + ' no sistema?\n\nEste usuário aparecerá em destaque nas páginas principais.')) {
-                alert('Usuário ' + username + ' foi destacado com sucesso!\n\n' +
-                      'Benefícios aplicados:\n' +
-                      '• Badge de usuário destacado\n' +
-                      '• Prioridade em resultados de busca\n' +
-                      '• Notificação para outros usuários');
-            }
-        }
-        
-        function sendMessage(username) {
-            const message = prompt('Digite a mensagem para ' + username + ':');
-            if (message) {
-                alert('Mensagem enviada para ' + username + ': "' + message + '"\n\n' +
-                      'A mensagem será entregue via:\n' +
-                      '• Notificação no sistema\n' +
-                      '• Email (se configurado)\n' +
-                      '• SMS (para assuntos urgentes)');
-            }
-        }
-        
-        function giveReward(username) {
-            const rewards = {
-                '1': 'Desconto de 10% em próximos aluguéis',
-                '2': 'Badge especial de usuário exemplar',
-                '3': 'Pontos bônus no ranking (50 pontos)',
-                '4': 'Acesso antecipado a novas funcionalidades'
-            };
-            
-            const choice = prompt('Escolha uma recompensa para ' + username + ':\n\n' +
-                                '1 - Desconto de 10%\n' +
-                                '2 - Badge especial\n' +
-                                '3 - 50 pontos bônus\n' +
-                                '4 - Acesso antecipado\n\n' +
-                                'Digite o número da recompensa:');
-            
-            if (choice && rewards[choice]) {
-                alert('Recompensa enviada para ' + username + '!\n\n' +
-                      'Recompensa: ' + rewards[choice] + '\n\n' +
-                      'O usuário receberá uma notificação sobre a recompensa.');
-            }
-        }
-        
-        function manageWarning(username) {
-            const actions = {
-                '1': 'Remover advertência',
-                '2': 'Estender prazo para melhoria',
-                '3': 'Aplicar suspensão temporária',
-                '4': 'Agendar revisão da conta'
-            };
-            
-            const action = prompt('Gerenciar advertência de ' + username + ':\n\n' +
-                                '1 - Remover advertência\n' +
-                                '2 - Estender prazo\n' +
-                                '3 - Aplicar suspensão\n' +
-                                '4 - Agendar revisão\n\n' +
-                                'Digite o número da ação:');
-            
-            if (action && actions[action]) {
-                const details = prompt('Adicione detalhes ou justificativa:');
-                if (details) {
-                    alert('Ação aplicada para ' + username + ':\n\n' +
-                          'Ação: ' + actions[action] + '\n' +
-                          'Detalhes: ' + details + '\n\n' +
-                          'Registro adicionado ao histórico do usuário.');
-                }
-            }
-        }
-        
-        function manageSuspension(username) {
-            const actions = {
-                '1': 'Revogar suspensão imediatamente',
-                '2': 'Reduzir tempo de suspensão',
-                '3': 'Estender tempo de suspensão',
-                '4': 'Converter em advertência final'
-            };
-            
-            const action = prompt('Gerenciar suspensão de ' + username + ':\n\n' +
-                                '1 - Revogar suspensão\n' +
-                                '2 - Reduzir tempo\n' +
-                                '3 - Estender tempo\n' +
-                                '4 - Converter em advertência\n\n' +
-                                'Digite o número da ação:');
-            
-            if (action && actions[action]) {
-                const justification = prompt('Justificativa da ação:');
-                if (justification) {
-                    alert('Suspensão de ' + username + ' atualizada:\n\n' +
-                          'Ação: ' + actions[action] + '\n' +
-                          'Justificativa: ' + justification + '\n\n' +
-                          'Usuário será notificado sobre a mudança.');
-                }
-            }
-        }
-        
-        function reviewAccount(username) {
-            const reviewTypes = {
-                '1': 'Revisão completa da conta',
-                '2': 'Análise de padrões de comportamento',
-                '3': 'Verificação de identidade',
-                '4': 'Avaliação para reabilitação'
-            };
-            
-            const type = prompt('Tipo de revisão para ' + username + ':\n\n' +
-                               '1 - Revisão completa\n' +
-                               '2 - Análise comportamental\n' +
-                               '3 - Verificação de identidade\n' +
-                               '4 - Avaliação reabilitação\n\n' +
-                               'Digite o número do tipo:');
-            
-            if (type && reviewTypes[type]) {
-                alert('Revisão agendada para ' + username + ':\n\n' +
-                      'Tipo: ' + reviewTypes[type] + '\n' +
-                      'Status: Pendente\n' +
-                      'Prazo: 5 dias úteis\n\n' +
-                      'Equipe de moderação foi notificada.');
-            }
-        }
-        
-        // Initialize with first category visible
+        // Initialize with appropriate view
         document.addEventListener('DOMContentLoaded', function() {
-            filterRanking('top-geral');
+            // Verificar se há resultados filtrados
+            <%if (listaRankingFiltrado != null && !listaRankingFiltrado.isEmpty()) {%>
+                // Mostrar resultados filtrados
+                document.getElementById('filtrados-section').style.display = 'block';
+                document.querySelectorAll('[data-category="filtrados"]').forEach(item => {
+                    item.style.display = 'block';
+                });
+                
+                // Esconder outras seções
+                document.querySelectorAll('.ranking-section:not(#filtrados-section)').forEach(section => {
+                    section.style.display = 'none';
+                });
+                document.querySelectorAll('.ranking-item:not([data-category="filtrados"])').forEach(item => {
+                    item.style.display = 'none';
+                });
+                document.querySelectorAll('.no-data').forEach(noData => {
+                    noData.style.display = 'none';
+                });
+                
+                // Remover active de todas as tabs
+                document.querySelectorAll('.filter-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+            <%} else {%>
+                // Mostrar top geral por padrão
+                document.getElementById('top-geral-section').style.display = 'block';
+                document.querySelectorAll('[data-category="top-geral"]').forEach(element => {
+                    element.style.display = 'block';
+                });
+                
+                // Esconder outras seções
+                document.querySelectorAll('[data-category="top-semana"]').forEach(element => {
+                    element.style.display = 'none';
+                });
+                document.querySelectorAll('[data-category="todos-locatarios"]').forEach(element => {
+                    element.style.display = 'none';
+                });
+                
+                // Set first tab as active
+                document.querySelector('.filter-tab').classList.add('active');
+            <%}%>
         });
     </script>
 </body>

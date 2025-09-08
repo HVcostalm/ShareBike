@@ -149,7 +149,9 @@ public class FeedbackDAO extends BaseDAO{
 	    String sqlSelect = """
 	        SELECT f.* FROM Feedback f
 	        INNER JOIN Reserva r ON f.Reserva = r.id_reserv
-	        WHERE r.Bicicleta = ?
+	        INNER JOIN Bicicleta b ON r.Bicicleta = b.id_bike
+	        WHERE r.Bicicleta = ? 
+	        AND f.avaliador_Usuario <> b.Usuario
 	    """;
 
 	    List<Feedback> feedbacks = new ArrayList<>();
@@ -173,6 +175,149 @@ public class FeedbackDAO extends BaseDAO{
 	    return feedbacks;
 	}
 
+	/**
+	 * Lista feedbacks de locadores sobre como o locatário tratou as bicicletas
+	 * Usado para mostrar no perfil do locatário as observações sobre bicicletas
+	 */
+	public List<Feedback> listarFeedbacksLocadorSobreBicicletas(String cpfCnpjLocatario) {
+	    String sqlSelect = """
+	        SELECT f.* FROM Feedback f
+	        INNER JOIN Reserva r ON f.Reserva = r.id_reserv
+	        INNER JOIN Bicicleta b ON r.Bicicleta = b.id_bike
+	        WHERE r.Usuario = ? 
+	        AND f.avaliador_Usuario = b.Usuario
+	        AND (f.obsBike_feedb IS NOT NULL AND f.obsBike_feedb != '')
+	    """;
+
+	    List<Feedback> feedbacks = new ArrayList<>();
+
+	    try {
+	        conexao = Conexao.getConnection();
+	        sql = conexao.prepareStatement(sqlSelect);
+	        sql.setString(1, cpfCnpjLocatario);
+	        rset = sql.executeQuery();
+
+	        while (rset.next()) {
+	            feedbacks.add(montarFeedback(rset));
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    } finally {
+	        fecharConexao();
+	    }
+
+	    return feedbacks;
+	}
+
+	
+	
+	
+	// Métodos adicionais para busca por nome
+	public List<Feedback> listarPorNomeAvaliado(String nomeAvaliado) {
+		String select = """
+			SELECT f.* FROM Feedback f
+			INNER JOIN Usuario u ON f.avaliado_Usuario = u.cpfCnpj_user
+			WHERE u.nomeRazaoSocial_user LIKE ?
+		""";
+		List<Feedback> lista = new ArrayList<>();
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(select);
+			sql.setString(1, "%" + nomeAvaliado + "%");
+			rset = sql.executeQuery();
+
+			while (rset.next()) {
+				lista.add(montarFeedback(rset));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return lista;
+	}
+	
+	public List<Feedback> listarPorNomeAvaliador(String nomeAvaliador) {
+		String select = """
+			SELECT f.* FROM Feedback f
+			INNER JOIN Usuario u ON f.avaliador_Usuario = u.cpfCnpj_user
+			WHERE u.nomeRazaoSocial_user LIKE ?
+		""";
+		List<Feedback> lista = new ArrayList<>();
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(select);
+			sql.setString(1, "%" + nomeAvaliador + "%");
+			rset = sql.executeQuery();
+
+			while (rset.next()) {
+				lista.add(montarFeedback(rset));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return lista;
+	}
+	
+	public List<Feedback> listarPorNomeBicicleta(String nomeBicicleta) {
+		String select = """
+			SELECT f.* FROM Feedback f
+			INNER JOIN Reserva r ON f.Reserva = r.id_reserv
+			INNER JOIN Bicicleta b ON r.bicicleta = b.id_bike
+			WHERE b.nome_bike LIKE ?
+		""";
+		List<Feedback> lista = new ArrayList<>();
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(select);
+			sql.setString(1, "%" + nomeBicicleta + "%");
+			rset = sql.executeQuery();
+
+			while (rset.next()) {
+				lista.add(montarFeedback(rset));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return lista;
+	}
+	
+	// Contar feedbacks satisfatórios (avaliação 4 ou 5) para estatísticas
+	public int contarFeedbacksSatisfatorios() {
+		String query = "SELECT COUNT(*) FROM Feedback WHERE (avaliacaoUser_feedb >= 4 OR avaliacaoBike_feedb >= 4)";
+		int count = 0;
+		
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(query);
+			ResultSet resultado = sql.executeQuery();
+			
+			if (resultado.next()) {
+				count = resultado.getInt(1);
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+		
+		return count;
+	}
 	
 	// Montar objeto Feedback
 	private Feedback montarFeedback(ResultSet rset) throws Exception {
@@ -189,19 +334,72 @@ public class FeedbackDAO extends BaseDAO{
 		fb.setFuncional_feedb(rset.getBoolean("funcional_feedb"));
 		fb.setManutencao_feedb(rset.getBoolean("manutencao_feedb"));
 
-		Reserva reserva = new Reserva();
-		reserva.setId_reserv(rset.getInt("Reserva"));
+		// Buscar dados completos da reserva
+		ReservaDAO reservaDAO = new ReservaDAO();
+		Reserva reserva = reservaDAO.buscarPorId(rset.getInt("Reserva"));
 		fb.setReserva(reserva);
 
-		Usuario avaliado = new Usuario();
-		avaliado.setCpfCnpj_user(rset.getString("avaliado_Usuario"));
+		// Buscar dados completos dos usuários
+		UsuarioDAO usuarioDAO = new UsuarioDAO();
+		Usuario avaliado = usuarioDAO.exibirUsuario(rset.getString("avaliado_Usuario"));
 		fb.setAvaliado_Usuario(avaliado);
 
-		Usuario avaliador = new Usuario();
-		avaliador.setCpfCnpj_user(rset.getString("avaliador_Usuario"));
+		Usuario avaliador = usuarioDAO.exibirUsuario(rset.getString("avaliador_Usuario"));
 		fb.setAvaliador_Usuario(avaliador);
 
 		return fb;
 	}
+	
+	// Verificar se já existe feedback para uma reserva específica
+	public boolean existeFeedbackParaReserva(int idReserva) {
+		String select = "SELECT COUNT(*) as total FROM Feedback WHERE Reserva = ?";
+		boolean existe = false;
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(select);
+			sql.setInt(1, idReserva);
+			rset = sql.executeQuery();
+
+			if (rset.next()) {
+				int total = rset.getInt("total");
+				existe = (total > 0);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return existe;
+	}
+	
+	// Verificar se já existe feedback de um avaliador específico para uma reserva
+	public boolean existeFeedbackDeAvaliadorParaReserva(int idReserva, String cpfAvaliador) {
+		String select = "SELECT COUNT(*) as total FROM Feedback WHERE Reserva = ? AND avaliador_Usuario = ?";
+		boolean existe = false;
+
+		try {
+			conexao = Conexao.getConnection();
+			sql = conexao.prepareStatement(select);
+			sql.setInt(1, idReserva);
+			sql.setString(2, cpfAvaliador);
+			rset = sql.executeQuery();
+
+			if (rset.next()) {
+				int total = rset.getInt("total");
+				existe = (total > 0);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			fecharConexao();
+		}
+
+		return existe;
+	}
 
 }
+

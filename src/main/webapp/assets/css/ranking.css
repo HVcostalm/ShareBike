@@ -1,4 +1,32 @@
-/* Reset e estilos base */
+/* Reset específico para ranking - Force Clean Layout */
+.ranking-item, .ranking-item * {
+    box-sizing: border-box !important;
+}
+
+.ranking-item {
+    position: relative !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Remove any inherited background bars */
+.ranking-item::before,
+.ranking-item::after,
+.ranking-position::before,
+.ranking-position::after {
+    display: none !important;
+    content: none !important;
+    background: none !important;
+}
+
+/* Resebody {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #38b2ac 0%, #047857 100%);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}ilos base */
 * {
     margin: 0;
     padding: 0;
@@ -7,7 +35,7 @@
 
 body {
     font-family: 'Arial', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #fff;
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -47,7 +75,7 @@ header h1 {
 .nav a {
     text-decoration: none;
     background: rgba(255, 255, 255, 0.9);
-    color: #333;
+    color: #047857;
     padding: 0.8rem 1.5rem;
     border-radius: 8px;
     transition: all 0.3s ease;
@@ -91,7 +119,7 @@ header h1 {
 }
 
 .filter-tab.active {
-    background: #007bff;
+    background: #38b2ac;
     color: white;
 }
 
@@ -103,20 +131,6 @@ header h1 {
     margin-bottom: 2rem;
 }
 
-/* Ranking Cards */
-.ranking-card {
-    background: white;
-    border-radius: 15px;
-    padding: 1.5rem;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-}
-
-.ranking-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-}
-
 /* Ranking Header */
 .ranking-header {
     display: flex;
@@ -125,29 +139,6 @@ header h1 {
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid #f8f9fa;
-}
-
-.ranking-position {
-    background: linear-gradient(135deg, #ffc107, #ff8c00);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    min-width: 60px;
-    text-align: center;
-}
-
-.ranking-position.first {
-    background: linear-gradient(135deg, #ffd700, #ffb347);
-}
-
-.ranking-position.second {
-    background: linear-gradient(135deg, #c0c0c0, #a8a8a8);
-}
-
-.ranking-position.third {
-    background: linear-gradient(135deg, #cd7f32, #b8860b);
 }
 
 .ranking-category {
@@ -207,7 +198,7 @@ header h1 {
 .stat-value {
     font-size: 1.3rem;
     font-weight: bold;
-    color: #007bff;
+    color: #38b2ac;
     display: block;
 }
 
@@ -276,35 +267,27 @@ header h1 {
     background: linear-gradient(135deg, #cd7f32, #b8860b);
 }
 
-/* Actions */
-.ranking-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
-
-.btn {
-    padding: 0.6rem 1.2rem;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
+/* Back Button */
+.btn-back {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     font-size: 0.9rem;
+    text-decoration: none;
+    background: #38b2ac;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
 }
 
-.btn-primary {
-    background: #007bff;
-    color: white;
+.btn-back:hover {
+    background: #0d9488;
+    transform: translateY(-1px);
 }
 
 .btn-primary:hover {
-    background: #0056b3;
+    background: #0d9488;
 }
 
 .btn-success {
@@ -350,7 +333,7 @@ header h1 {
     text-align: center;
     padding: 1.5rem;
     border-radius: 10px;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #38b2ac, #047857);
     color: white;
 }
 
@@ -397,6 +380,244 @@ footer {
     text-align: center;
     padding: 1rem;
     margin-top: 3rem;
+}
+
+/* ===== ESTILOS PARA LISTA DE RANKING ===== */
+
+/* Ranking List Container */
+.ranking-list {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Section Title */
+.section-title {
+    color: white;
+    margin: 2rem 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+}
+
+/* Ranking Section */
+.ranking-section {
+    margin-bottom: 2rem;
+}
+
+/* Ranking Item - Clean List Style - Final Version */
+.ranking-item {
+    background: white !important;
+    border-radius: 8px !important;
+    margin-bottom: 0.5rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.75rem 1rem !important;
+    gap: 1rem !important;
+    min-height: 60px !important;
+    border-left: 4px solid transparent !important;
+    border: none !important;
+    color: #333 !important;
+}
+
+.ranking-item:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    border-left-color: #008080 !important;
+}
+
+/* Position Badge - Compact Style - Force Override */
+.ranking-position {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    min-width: 50px !important;
+    flex-shrink: 0 !important;
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    text-align: left !important;
+}
+
+.position-number {
+    background: linear-gradient(135deg, #008080, #006666) !important;
+    color: white !important;
+    padding: 0.3rem 0.6rem !important;
+    border-radius: 20px !important;
+    font-weight: bold !important;
+    font-size: 0.9rem !important;
+    min-width: 35px !important;
+    height: 35px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+}
+
+.ranking-position.gold .position-number {
+    background: linear-gradient(135deg, #ffd700, #ffb347) !important;
+    color: #333 !important;
+}
+
+.ranking-position.silver .position-number {
+    background: linear-gradient(135deg, #c0c0c0, #a8a8a8) !important;
+    color: #333 !important;
+}
+
+.ranking-position.bronze .position-number {
+    background: linear-gradient(135deg, #cd7f32, #b8860b) !important;
+    color: white !important;
+}
+
+.medal {
+    font-size: 1rem !important;
+    line-height: 1 !important;
+}
+
+/* User Details - Compact */
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    margin-bottom: 0.2rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.user-location {
+    color: #666 !important;
+    font-size: 0.8rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.3rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Points Display - Simple */
+.ranking-points {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.1rem !important;
+    min-width: 70px !important;
+    padding: 0.5rem !important;
+    flex-shrink: 0 !important;
+}
+
+.points-value {
+    font-size: 1.2rem !important;
+    font-weight: bold !important;
+    color: #008080 !important;
+    line-height: 1 !important;
+}
+
+.points-label {
+    font-size: 0.7rem !important;
+    color: #888 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    text-align: center !important;
+}
+
+/* No data display */
+
+.btn-primary:hover {
+    background: #006666;
+}
+
+/* No Data Display */
+.no-data {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 12px;
+    margin: 1rem 0;
+    color: #666;
+}
+
+.no-data i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #ddd;
+}
+
+.no-data h3 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.no-data p {
+    margin-bottom: 1rem;
+}
+
+/* Responsive para Lista - Compact */
+@media (max-width: 768px) {
+    .ranking-item {
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+    
+    .ranking-position {
+        min-width: 40px;
+    }
+    
+    .position-number {
+        min-width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+    }
+    
+    .user-name {
+        font-size: 0.9rem;
+    }
+    
+    .user-location {
+        font-size: 0.75rem;
+    }
+    
+    .ranking-points {
+        min-width: 60px;
+    }
+    
+    .points-value {
+        font-size: 1rem;
+    }
+    
+    .btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .ranking-item {
+        padding: 0.4rem;
+    }
+    
+    .user-name {
+        font-size: 1.1rem;
+    }
+    
+    .points-value {
+        font-size: 1.5rem;
+    }
 }
 
 /* Responsive */

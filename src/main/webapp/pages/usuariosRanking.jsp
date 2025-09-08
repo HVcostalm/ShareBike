@@ -1,11 +1,13 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="java.util.List" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Usuários para o Ranking - ShareBike</title>
-    <link rel="stylesheet" href="../assets/css/gestaoUsuario.css">
+    <title>Usuários Elegíveis para Ranking - ShareBike</title>
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/assets/css/gestaoUsuario.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .container {
@@ -17,7 +19,7 @@
         }
         
         .ranking-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
             color: white;
             padding: 2rem;
             border-radius: 15px;
@@ -50,14 +52,14 @@
         .user-card:hover {
             transform: translateY(-3px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            border-color: #667eea;
+            border-color: #38b2ac;
         }
         
         .user-avatar {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -93,9 +95,9 @@
             gap: 0.3rem;
         }
         
-        .status-pending {
-            background: linear-gradient(135deg, #ffc107, #e0a800);
-            color: #212529;
+        .status-eligible {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
             padding: 0.6rem 1.2rem;
             border-radius: 20px;
             font-size: 0.9rem;
@@ -124,7 +126,7 @@
         }
         
         .back-button {
-            background: linear-gradient(135deg, #6c757d, #5a6268);
+            background: linear-gradient(135deg, #6b7280, #4b5563);
             color: white;
             padding: 1rem 2rem;
             text-decoration: none;
@@ -135,6 +137,8 @@
             margin-bottom: 2rem;
             font-weight: 600;
             transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
         }
         
         .back-button:hover {
@@ -156,159 +160,177 @@
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
+        
+        .user-count {
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .actions-section {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-approve-ranking {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-approve-ranking:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-view {
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-view:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .user-stats {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            border-left: 4px solid #38b2ac;
+        }
+        
+        .stat-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            margin-right: 1rem;
+            font-size: 0.85rem;
+            color: #374151;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="<%=request.getContextPath()%>/pages/gestaoUsuario.jsp" class="back-button">
-            <i class="fas fa-arrow-left"></i> Voltar para Gestão
-        </a>
+        <form action="<%=request.getContextPath()%>/UsuarioController" method="get" style="display: inline-block;">
+            <button type="submit" class="back-button">
+                <i class="fas fa-arrow-left"></i> Voltar para Gestão
+            </button>
+        </form>
         
         <div class="ranking-header">
             <h1 class="ranking-title">
                 <i class="fas fa-trophy"></i> 
-                Usuários Aguardando Aprovação para Ranking
+                Usuários Elegíveis para Ranking
             </h1>
-            <p>Usuários que finalizaram reservas e estão aguardando participar do sistema de rankings</p>
+            <p>Usuários com acesso aprovado que podem participar do sistema de rankings da plataforma ShareBike</p>
+        </div>
+        
+        <%
+            List<Usuario> listaUsuario = (List<Usuario>) request.getAttribute("listaUsuarioRank");
+            int totalElegiveis = (listaUsuario != null) ? listaUsuario.size() : 0;
+        %>
+        
+        <div class="user-count">
+            <i class="fas fa-trophy"></i> 
+            <strong><%= totalElegiveis %> usuário<%= totalElegiveis != 1 ? "s" : "" %></strong> 
+            elegível<%= totalElegiveis != 1 ? "is" : "" %> para participar do ranking
         </div>
         
         <h2 class="section-title">
-            <i class="fas fa-clock"></i> 
-            Usuários Pendentes - Dados Estáticos
+            <i class="fas fa-list"></i> 
+            Lista de Usuários Elegíveis
         </h2>
         
-        <!-- Usuários com dados estáticos -->
-        <div class="user-card" onclick="redirecionarParaPerfil('11111111111')">
-            <div class="user-avatar">RS</div>
-            <div class="user-info">
-                <div class="user-name">Roberto Silva</div>
-                <div class="user-details">
-                    <div class="detail-item">
-                        <i class="fas fa-envelope"></i> roberto.silva@email.com
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-id-card"></i> 111.111.111-11
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i> São Paulo - SP
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-bicycle"></i> 3 reservas finalizadas
+        <!-- Usuários com dados dinâmicos do banco -->
+        <%
+            if (listaUsuario == null || listaUsuario.isEmpty()) {
+        %>
+            <div class="no-users">
+                <i class="fas fa-medal"></i>
+                <h3>Nenhum usuário elegível para ranking</h3>
+                <p>Não há usuários com acesso aprovado que ainda não participem do sistema de ranking.</p>
+            </div>
+        <%
+            } else {
+                for (Usuario usuario : listaUsuario) {
+                    String iniciais = "";
+                    if (usuario.getNomeRazaoSocial_user() != null && !usuario.getNomeRazaoSocial_user().trim().isEmpty()) {
+                        String[] nomes = usuario.getNomeRazaoSocial_user().trim().split(" ");
+                        iniciais += nomes[0].charAt(0);
+                        if (nomes.length > 1) {
+                            iniciais += nomes[nomes.length - 1].charAt(0);
+                        }
+                        iniciais = iniciais.toUpperCase();
+                    }
+        %>
+            <div class="user-card">
+                <div class="user-avatar"><%= iniciais %></div>
+                <div class="user-info">
+                    <div class="user-name"><%= usuario.getNomeRazaoSocial_user() %></div>
+                    <div class="user-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-check-circle"></i> Acesso Aprovado
+                        </span>
+                        <span class="stat-item">
+                            <i class="fas fa-clock"></i> Aguardando Ranking
+                        </span>
+                        <% if (usuario.isPossuiBike_user()) { %>
+                        <span class="stat-item">
+                            <i class="fas fa-bicycle"></i> Proprietário de Bike
+                        </span>
+                        <% } %>
                     </div>
                 </div>
-            </div>
-            <div class="status-pending">
-                <i class="fas fa-hourglass-half"></i>
-                Aguardando Aprovação Ranking
-            </div>
-        </div>
-        
-        <div class="user-card" onclick="redirecionarParaPerfil('22222222222')">
-            <div class="user-avatar">MF</div>
-            <div class="user-info">
-                <div class="user-name">Marina Ferreira</div>
-                <div class="user-details">
-                    <div class="detail-item">
-                        <i class="fas fa-envelope"></i> marina.ferreira@email.com
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-id-card"></i> 222.222.222-22
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i> Rio de Janeiro - RJ
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-bicycle"></i> 5 reservas finalizadas
-                    </div>
+                <div class="actions-section">
+                    
+                    <!-- Formulário para ver detalhes do usuário -->
+                    <form action="<%=request.getContextPath()%>/UsuarioController" method="post" style="display: inline-block;">
+                        <input type="hidden" name="action" value="exibir">
+                        <input type="hidden" name="cpfCnpj" value="<%= usuario.getCpfCnpj_user() %>">
+                        <input type="hidden" name="origem" value="usuariosRanking">
+                        <button type="submit" class="btn-view">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </button>
+                    </form>
                 </div>
             </div>
-            <div class="status-pending">
-                <i class="fas fa-hourglass-half"></i>
-                Aguardando Aprovação Ranking
-            </div>
-        </div>
-        
-        <div class="user-card" onclick="redirecionarParaPerfil('33333333333')">
-            <div class="user-avatar">AL</div>
-            <div class="user-info">
-                <div class="user-name">Antonio Lima</div>
-                <div class="user-details">
-                    <div class="detail-item">
-                        <i class="fas fa-envelope"></i> antonio.lima@email.com
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-id-card"></i> 333.333.333-33
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i> Belo Horizonte - MG
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-bicycle"></i> 2 reservas finalizadas
-                    </div>
-                </div>
-            </div>
-            <div class="status-pending">
-                <i class="fas fa-hourglass-half"></i>
-                Aguardando Aprovação Ranking
-            </div>
-        </div>
-        
-        <div class="user-card" onclick="redirecionarParaPerfil('44444444444')">
-            <div class="user-avatar">CS</div>
-            <div class="user-info">
-                <div class="user-name">Carla Santos</div>
-                <div class="user-details">
-                    <div class="detail-item">
-                        <i class="fas fa-envelope"></i> carla.santos@email.com
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-id-card"></i> 444.444.444-44
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i> Brasília - DF
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-bicycle"></i> 7 reservas finalizadas
-                    </div>
-                </div>
-            </div>
-            <div class="status-pending">
-                <i class="fas fa-hourglass-half"></i>
-                Aguardando Aprovação Ranking
-            </div>
-        </div>
-        
-        <div class="user-card" onclick="redirecionarParaPerfil('55555555555')">
-            <div class="user-avatar">DR</div>
-            <div class="user-info">
-                <div class="user-name">Diego Rodrigues</div>
-                <div class="user-details">
-                    <div class="detail-item">
-                        <i class="fas fa-envelope"></i> diego.rodrigues@email.com
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-id-card"></i> 555.555.555-55
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-map-marker-alt"></i> Salvador - BA
-                    </div>
-                    <div class="detail-item">
-                        <i class="fas fa-bicycle"></i> 4 reservas finalizadas
-                    </div>
-                </div>
-            </div>
-            <div class="status-pending">
-                <i class="fas fa-hourglass-half"></i>
-                Aguardando Aprovação Ranking
-            </div>
-        </div>
+        <%
+                }
+            }
+        %>
     </div>
-
-    <script>
-        function redirecionarParaPerfil(cpfCnpj) {
-            // Redireciona diretamente para a página PerfilAdmRanking com dados estáticos
-            window.location.href = 'PerfilAdmRanking.jsp?cpf=' + encodeURIComponent(cpfCnpj);
-        }
-    </script>
 </body>
 </html>

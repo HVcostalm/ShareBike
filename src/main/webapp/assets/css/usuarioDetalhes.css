@@ -10,7 +10,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #006644;
+    background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
     padding: 10px 20px;
     color: white;
 }
@@ -23,6 +23,7 @@ body {
 
 .navbar a:hover {
     text-decoration: underline;
+    color: #f0fdfa;
 }
 
 .project-name {
@@ -31,7 +32,7 @@ body {
 }
 
 .logout-button {
-    background-color: #cc0000;
+    background-color: #dc2626;
     border: none;
     color: white;
     padding: 8px 15px;
@@ -40,7 +41,7 @@ body {
 }
 
 .logout-button:hover {
-    background-color: #a80000;
+    background-color: #b91c1c;
 }
 
 .perfil {
@@ -73,7 +74,7 @@ body {
     height: 150px;
     object-fit: cover;
     border-radius: 50%;
-    border: 3px solid #006644;
+    border: 3px solid #38b2ac;
 }
 
 .nome-usuario {
@@ -87,12 +88,12 @@ body {
 }
 
 .estrela {
-    color: gold;
+    color: #fbbf24;
     font-size: 20px;
 }
 
 .estrela.apagada {
-    color: #ccc;
+    color: #e5e7eb;
 }
 
 .nota {
@@ -103,7 +104,7 @@ body {
 
 .btn-alterar {
     margin-top: 20px;
-    background-color: #006644;
+    background-color: #38b2ac;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -112,7 +113,7 @@ body {
 }
 
 .btn-alterar:hover {
-    background-color: #004d33;
+    background-color: #0d9488;
 }
 
 .feedbacks {
@@ -120,7 +121,7 @@ body {
 }
 
 .feedbacks h3 {
-    color: #006644;
+    color: #047857;
     margin-bottom: 20px;
 }
 
@@ -133,7 +134,7 @@ body {
 }
 
 .back-button {
-    background-color: #006644;
+    background-color: #38b2ac;
     border: none;
     color: white !important;
     padding: 8px 15px;
@@ -144,6 +145,6 @@ body {
 }
 
 .back-button:hover {
-    background-color: #004d33;
+    background-color: #0d9488;
     text-decoration: none !important;
 }

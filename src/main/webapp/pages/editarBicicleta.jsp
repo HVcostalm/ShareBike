@@ -1,15 +1,36 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Bicicleta" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+
+<%
+// Verificar se o usuário está logado
+Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+if (usuarioLogado == null) {
+    response.sendRedirect("loginUsuario.jsp");
+    return;
+}
+
+// Obter dados enviados pelo controller
+Bicicleta bicicleta = (Bicicleta) request.getAttribute("bicicleta");
+Usuario proprietario = (Usuario) request.getAttribute("proprietario");
+
+if (bicicleta == null) {
+    response.sendRedirect("bicicletasLocador.jsp");
+    return;
+}
+%>
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Editar Bicicleta - ShareBike</title>
-    <link rel="stylesheet" href="../assets/css/usuarioDetalhes.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/usuarioDetalhes.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background: #f8f9fa;
@@ -82,8 +103,7 @@
         }
         
         .form-group input,
-        .form-group select,
-        .form-group textarea {
+        .form-group select {
             padding: 0.8rem;
             border: 2px solid #e9ecef;
             border-radius: 8px;
@@ -92,113 +112,20 @@
         }
         
         .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
+        .form-group select:focus {
             outline: none;
             border-color: #28a745;
             box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
         }
         
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
+        .form-group input[readonly] {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
         }
         
         .form-group.full-width {
             grid-column: 1 / -1;
-        }
-        
-        .bike-images {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .image-gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .bike-image {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid #e9ecef;
-        }
-        
-        .upload-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            padding: 2rem;
-            border: 2px dashed #28a745;
-            border-radius: 8px;
-            background: #f8fff8;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .file-label {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 0.8rem 2rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .file-label:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-        
-        .price-input {
-            position: relative;
-        }
-        
-        .price-input input {
-            padding-left: 40px;
-        }
-        
-        .checkbox-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .checkbox-item:hover {
-            background: #e9ecef;
-        }
-        
-        .checkbox-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-        }
-        
-        .checkbox-item label {
-            cursor: pointer;
-            font-weight: 500;
-            margin: 0;
         }
         
         .btn {
@@ -225,16 +152,6 @@
             color: white;
         }
         
-        .btn-danger {
-            background: linear-gradient(135deg, #dc3545, #c82333);
-            color: white;
-        }
-        
-        .btn-warning {
-            background: linear-gradient(135deg, #ffc107, #e0a800);
-            color: #212529;
-        }
-        
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -246,31 +163,6 @@
             justify-content: center;
             margin-top: 2rem;
             flex-wrap: wrap;
-        }
-        
-        .status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.8rem 1.2rem;
-            border-radius: 8px;
-            font-weight: 500;
-            margin-bottom: 1rem;
-        }
-        
-        .status-available {
-            background: #d4edda;
-            color: #28a745;
-        }
-        
-        .status-rented {
-            background: #fff3cd;
-            color: #856404;
-        }
-        
-        .status-maintenance {
-            background: #f8d7da;
-            color: #dc3545;
         }
         
         .alert {
@@ -288,24 +180,13 @@
             border: 1px solid #bee5eb;
         }
         
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        
-        .rating-display {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
+        .bike-image-preview {
+            max-width: 200px;
+            height: 150px;
+            object-fit: cover;
             border-radius: 8px;
-        }
-        
-        .stars {
-            color: #ffc107;
-            font-size: 1.2rem;
+            border: 2px solid #e9ecef;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -317,381 +198,120 @@
                 <i class="fas fa-bicycle"></i> 
                 Editar Bicicleta
             </h1>
-            <p>Edite as informações da bicicleta: Bike Speed Pro 2024</p>
+            <p>Edite as informações da bicicleta: <%= bicicleta.getNome_bike() != null ? bicicleta.getNome_bike() : "Nome não informado" %></p>
+        </div>
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            Apenas alguns campos podem ser editados. Campos em cinza são somente leitura.
         </div>
         
         <!-- Formulário de Edição -->
-        <form action="../BicicletaController" method="post" enctype="multipart/form-data">
+        <form action="<%=request.getContextPath()%>/BicicletaController" method="post">
             <input type="hidden" name="action" value="editar">
-            <input type="hidden" name="idBicicleta" value="1">
+            <input type="hidden" name="id" value="<%= bicicleta.getId_bike() %>">
             
             <div class="form-container">
-                <!-- Status da Bicicleta -->
-                <div class="status-indicator status-available">
-                    <i class="fas fa-check-circle"></i>
-                    Bicicleta Disponível
-                </div>
-                
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Use este formulário para editar as informações da bicicleta. Campos obrigatórios estão marcados com *</span>
-                </div>
-                
-                <!-- Fotos da Bicicleta -->
-                <div class="bike-images">
+                <!-- Foto da Bicicleta -->
+                <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-camera"></i>
-                        Fotos da Bicicleta
+                        Foto da Bicicleta
                     </h3>
                     
-                    <div class="image-gallery">
-                        <img src="../assets/images/bike1.jpg" alt="Foto 1" class="bike-image">
-                        <img src="../assets/images/bike2.jpg" alt="Foto 2" class="bike-image">
-                        <img src="../assets/images/bike3.jpg" alt="Foto 3" class="bike-image">
-                    </div>
-                    
-                    <div class="upload-area">
-                        <input type="file" id="fotos" name="fotos" class="file-input" accept="image/*" multiple>
-                        <label for="fotos" class="file-label">
-                            <i class="fas fa-camera"></i>
-                            Adicionar/Alterar Fotos
-                        </label>
-                        <small>Formatos aceitos: JPG, PNG, GIF (máx. 5MB cada, até 10 fotos)</small>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="foto_bike">
+                                <i class="fas fa-image"></i>
+                                URL da Foto (Editável)
+                            </label>
+                            <input type="text" id="foto_bike" name="foto_bike" 
+                                   value="<%= bicicleta.getFoto_bike() != null ? bicicleta.getFoto_bike() : "" %>"
+                                   placeholder="Digite a URL da foto da bicicleta">
+                        </div>
+                        
+                        <div class="form-group">
+                            <img src="<%= bicicleta.getFoto_bike() != null ? bicicleta.getFoto_bike() : "" %>" 
+                                 alt="Foto da bicicleta" class="bike-image-preview" id="preview-image">
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Informações Básicas -->
+                <!-- Informações Básicas (Somente Leitura) -->
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-info-circle"></i>
-                        Informações Básicas
+                        Informações Básicas (Somente Leitura)
                     </h3>
                     
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="modelo">
-                                <i class="fas fa-tag"></i>
-                                Modelo *
+                            <label>
+                                <i class="fas fa-bicycle"></i>
+                                Nome da Bicicleta
                             </label>
-                            <input type="text" id="modelo" name="modelo" 
-                                   value="Bike Speed Pro 2024" required>
+                            <input type="text" readonly 
+                                   value="<%= bicicleta.getNome_bike() != null ? bicicleta.getNome_bike() : "" %>">
                         </div>
                         
                         <div class="form-group">
-                            <label for="marca">
-                                <i class="fas fa-industry"></i>
-                                Marca *
+                            <label>
+                                <i class="fas fa-tags"></i>
+                                Tipo da Bicicleta
                             </label>
-                            <input type="text" id="marca" name="marca" 
-                                   value="Trek" required>
+                            <input type="text" readonly 
+                                   value="<%= bicicleta.getTipo_bike() != null ? bicicleta.getTipo_bike() : "" %>">
                         </div>
                         
                         <div class="form-group">
-                            <label for="cor">
-                                <i class="fas fa-palette"></i>
-                                Cor *
+                            <label>
+                                <i class="fas fa-barcode"></i>
+                                Chassi
                             </label>
-                            <input type="text" id="cor" name="cor" 
-                                   value="Azul Metálico" required>
+                            <input type="text" readonly 
+                                   value="<%= bicicleta.getChassi_bike() != null ? bicicleta.getChassi_bike() : "" %>">
                         </div>
                         
                         <div class="form-group">
-                            <label for="tamanho">
-                                <i class="fas fa-arrows-alt-v"></i>
-                                Tamanho *
+                            <label>
+                                <i class="fas fa-user"></i>
+                                Proprietário
                             </label>
-                            <select id="tamanho" name="tamanho" required>
-                                <option value="P">P (14" - 16")</option>
-                                <option value="M" selected>M (17" - 19")</option>
-                                <option value="L">L (20" - 22")</option>
-                                <option value="XL">XL (23" - 25")</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tipoCategoria">
-                                <i class="fas fa-list-alt"></i>
-                                Categoria *
-                            </label>
-                            <select id="tipoCategoria" name="tipoCategoria" required>
-                                <option value="mountain" selected>Mountain Bike</option>
-                                <option value="speed">Speed/Road</option>
-                                <option value="urbana">Urbana/City</option>
-                                <option value="hibrida">Híbrida</option>
-                                <option value="eletrica">Elétrica</option>
-                                <option value="infantil">Infantil</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="anoFabricacao">
-                                <i class="fas fa-calendar-alt"></i>
-                                Ano de Fabricação
-                            </label>
-                            <input type="number" id="anoFabricacao" name="anoFabricacao" 
-                                   value="2024" min="1990" max="2025">
+                            <input type="text" readonly 
+                                   value="<%= proprietario != null ? proprietario.getNomeRazaoSocial_user() : "Não informado" %>">
                         </div>
                     </div>
                 </div>
                 
-                <!-- Especificações Técnicas -->
+                <!-- Campos Editáveis -->
                 <div class="form-section">
                     <h3 class="section-title">
-                        <i class="fas fa-cogs"></i>
-                        Especificações Técnicas
+                        <i class="fas fa-edit"></i>
+                        Campos Editáveis
                     </h3>
                     
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="numeroMarchas">
-                                <i class="fas fa-exchange-alt"></i>
-                                Número de Marchas
-                            </label>
-                            <select id="numeroMarchas" name="numeroMarchas">
-                                <option value="1">1 Marcha</option>
-                                <option value="7">7 Marchas</option>
-                                <option value="14">14 Marchas</option>
-                                <option value="18">18 Marchas</option>
-                                <option value="21" selected>21 Marchas</option>
-                                <option value="24">24 Marchas</option>
-                                <option value="27">27 Marchas</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tipoFreio">
-                                <i class="fas fa-hand-paper"></i>
-                                Tipo de Freio
-                            </label>
-                            <select id="tipoFreio" name="tipoFreio">
-                                <option value="v-brake">V-Brake</option>
-                                <option value="disco-mecanico" selected>Disco Mecânico</option>
-                                <option value="disco-hidraulico">Disco Hidráulico</option>
-                                <option value="cantilever">Cantilever</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="materialQuadro">
-                                <i class="fas fa-hammer"></i>
-                                Material do Quadro
-                            </label>
-                            <select id="materialQuadro" name="materialQuadro">
-                                <option value="aco">Aço</option>
-                                <option value="aluminio" selected>Alumínio</option>
-                                <option value="carbono">Fibra de Carbono</option>
-                                <option value="titanio">Titânio</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tamanhoRoda">
-                                <i class="fas fa-circle"></i>
-                                Tamanho da Roda
-                            </label>
-                            <select id="tamanhoRoda" name="tamanhoRoda">
-                                <option value="16">16"</option>
-                                <option value="20">20"</option>
-                                <option value="24">24"</option>
-                                <option value="26" selected>26"</option>
-                                <option value="27.5">27.5"</option>
-                                <option value="29">29"</option>
-                                <option value="700c">700c</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="peso">
-                                <i class="fas fa-weight"></i>
-                                Peso (kg)
-                            </label>
-                            <input type="number" id="peso" name="peso" 
-                                   value="12.5" step="0.1" min="5" max="30">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="capacidadeMaxima">
-                                <i class="fas fa-weight-hanging"></i>
-                                Capacidade Máxima (kg)
-                            </label>
-                            <input type="number" id="capacidadeMaxima" name="capacidadeMaxima" 
-                                   value="120" min="50" max="200">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Status e Disponibilidade -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-calendar-check"></i>
-                        Status e Disponibilidade
-                    </h3>
-                    
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="statusDisponibilidade">
-                                <i class="fas fa-toggle-on"></i>
-                                Status de Disponibilidade *
-                            </label>
-                            <select id="statusDisponibilidade" name="statusDisponibilidade" required>
-                                <option value="disponivel" selected>Disponível</option>
-                                <option value="alugada">Alugada</option>
-                                <option value="manutencao">Em Manutenção</option>
-                                <option value="inativa">Inativa</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="localizacao">
+                            <label for="localEntr_bike">
                                 <i class="fas fa-map-marker-alt"></i>
-                                Localização Atual
+                                Local de Entrega
                             </label>
-                            <input type="text" id="localizacao" name="localizacao" 
-                                   value="Estação Central - São Paulo">
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Características e Acessórios -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-plus-circle"></i>
-                        Características e Acessórios
-                    </h3>
-                    
-                    <div class="features-grid">
-                        <div class="checkbox-group">
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="possuiCadeado" name="possuiCadeado" checked>
-                                <label for="possuiCadeado">
-                                    <i class="fas fa-lock"></i>
-                                    Possui Cadeado
-                                </label>
-                            </div>
-                            
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="possuiCapacete" name="possuiCapacete" checked>
-                                <label for="possuiCapacete">
-                                    <i class="fas fa-hard-hat"></i>
-                                    Inclui Capacete
-                                </label>
-                            </div>
-                            
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="possuiLuz" name="possuiLuz">
-                                <label for="possuiLuz">
-                                    <i class="fas fa-lightbulb"></i>
-                                    Sistema de Iluminação
-                                </label>
-                            </div>
-                            
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="possuiCesta" name="possuiCesta" checked>
-                                <label for="possuiCesta">
-                                    <i class="fas fa-shopping-basket"></i>
-                                    Cesta/Bagageiro
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="checkbox-group">
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="possuiSuspensao" name="possuiSuspensao" checked>
-                                <label for="possuiSuspensao">
-                                    <i class="fas fa-arrows-alt-v"></i>
-                                    Suspensão
-                                </label>
-                            </div>
-                            
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="possuiGPS" name="possuiGPS">
-                                <label for="possuiGPS">
-                                    <i class="fas fa-satellite"></i>
-                                    Rastreamento GPS
-                                </label>
-                            </div>
-                            
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="apropriadaChuva" name="apropriadaChuva">
-                                <label for="apropriadaChuva">
-                                    <i class="fas fa-cloud-rain"></i>
-                                    Apropriada para Chuva
-                                </label>
-                            </div>
-                            
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="bikeEletrica" name="bikeEletrica">
-                                <label for="bikeEletrica">
-                                    <i class="fas fa-bolt"></i>
-                                    Bicicleta Elétrica
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Avaliação e Histórico -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-star"></i>
-                        Avaliação e Histórico
-                    </h3>
-                    
-                    <div class="form-grid">
-                        <div class="rating-display">
-                            <span class="stars">★★★★☆</span>
-                            <span><strong>4.2/5</strong> (18 avaliações)</span>
+                            <input type="text" id="localEntr_bike" name="localEntr_bike" 
+                                   value="<%= bicicleta.getLocalEntr_bike() != null ? bicicleta.getLocalEntr_bike() : "" %>"
+                                   placeholder="Digite o local de entrega" required>
                         </div>
                         
                         <div class="form-group">
-                            <label>
-                                <i class="fas fa-history"></i>
-                                Total de Aluguéis
+                            <label for="estadoConserv_bike">
+                                <i class="fas fa-cogs"></i>
+                                Estado de Conservação
                             </label>
-                            <input type="text" value="42 aluguéis" readonly>
+                            <select id="estadoConserv_bike" name="estadoConserv_bike" required>
+                                <option value="BOM" <%= "BOM".equals(bicicleta.getEstadoConserv_bike()) ? "selected" : "" %>>BOM</option>
+                                <option value="ÓTIMA" <%= "OTIMA".equals(bicicleta.getEstadoConserv_bike()) ? "selected" : "" %>>ÓTIMA</option>
+                                <option value="EXCELENTE" <%= "EXCELENTE".equals(bicicleta.getEstadoConserv_bike()) ? "selected" : "" %>>EXCELENTE</option>
+                            </select>
                         </div>
-                        
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-clock"></i>
-                                Tempo Total de Uso
-                            </label>
-                            <input type="text" value="126 horas" readonly>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-calendar-alt"></i>
-                                Última Manutenção
-                            </label>
-                            <input type="date" value="2025-01-15" readonly>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Observações -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-sticky-note"></i>
-                        Observações e Descrição
-                    </h3>
-                    
-                    <div class="form-group full-width">
-                        <label for="descricao">
-                            <i class="fas fa-align-left"></i>
-                            Descrição da Bicicleta
-                        </label>
-                        <textarea id="descricao" name="descricao" 
-                                  placeholder="Descreva as características principais da bicicleta...">Excelente bicicleta speed para uso urbano e trilhas leves. Quadro de alumínio leve, 21 marchas Shimano, freios a disco mecânicos. Ideal para ciclistas iniciantes e intermediários.</textarea>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="observacoesManutencao">
-                            <i class="fas fa-tools"></i>
-                            Observações de Manutenção
-                        </label>
-                        <textarea id="observacoesManutencao" name="observacoesManutencao" 
-                                  placeholder="Histórico de manutenções e observações técnicas...">Última revisão completa em 15/01/2025. Troca de pastilhas de freio realizada. Corrente lubrificada. Pneus em bom estado.</textarea>
                     </div>
                 </div>
             </div>
@@ -703,88 +323,24 @@
                     Salvar Alterações
                 </button>
                 
-                <a href="<%=request.getContextPath()%>/pages/definirDisponibilidadeBike.jsp?id=1" class="btn btn-warning">
-                    <i class="fas fa-calendar-alt"></i>
-                    Definir Disponibilidade
-                </a>
-                
-                <a href="<%=request.getContextPath()%>/pages/bicicletasAdm.jsp" class="btn btn-secondary">
+                <a href="<%=request.getContextPath()%>/BicicletaController?action=exibir&id=<%= bicicleta.getId_bike() %>" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i>
-                    Voltar às Bicicletas
+                    Voltar aos Detalhes
                 </a>
-                
-                <button type="button" class="btn btn-danger" onclick="confirmarExclusao()">
-                    <i class="fas fa-trash-alt"></i>
-                    Excluir Bicicleta
-                </button>
             </div>
         </form>
     </div>
 
     <script>
-        function confirmarExclusao() {
-            if (confirm('Tem certeza que deseja excluir esta bicicleta?\n\nEsta ação não pode ser desfeita e todos os dados da bicicleta serão permanentemente removidos.')) {
-                alert('Bicicleta excluída com sucesso!');
-                window.location.href = 'bicicletasAdm.jsp';
-            }
-        }
-        
-        // Preview das imagens
-        document.getElementById('fotos').addEventListener('change', function(e) {
-            const files = e.target.files;
-            const gallery = document.querySelector('.image-gallery');
-            
-            // Limpar imagens atuais (ou manter e adicionar novas)
-            Array.from(files).forEach((file, index) => {
-                if (file && index < 10) { // Máximo 10 imagens
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'bike-image';
-                        img.alt = `Nova foto ${index + 1}`;
-                        gallery.appendChild(img);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        });
-        
-        // Formatação de campos
-        document.querySelectorAll('input[type="number"][step]').forEach(input => {
-            input.addEventListener('blur', function() {
-                if (this.value && this.step) {
-                    const step = parseFloat(this.step);
-                    const value = parseFloat(this.value);
-                    this.value = value.toFixed(step < 1 ? 2 : 0);
-                }
-            });
-        });
-        
-        // Atualizar status visual baseado na seleção
-        document.getElementById('statusDisponibilidade').addEventListener('change', function() {
-            const statusIndicator = document.querySelector('.status-indicator');
-            const value = this.value;
-            
-            statusIndicator.className = 'status-indicator';
-            
-            switch(value) {
-                case 'disponivel':
-                    statusIndicator.classList.add('status-available');
-                    statusIndicator.innerHTML = '<i class="fas fa-check-circle"></i> Bicicleta Disponível';
-                    break;
-                case 'alugada':
-                    statusIndicator.classList.add('status-rented');
-                    statusIndicator.innerHTML = '<i class="fas fa-clock"></i> Bicicleta Alugada';
-                    break;
-                case 'manutencao':
-                    statusIndicator.classList.add('status-maintenance');
-                    statusIndicator.innerHTML = '<i class="fas fa-tools"></i> Em Manutenção';
-                    break;
-                case 'inativa':
-                    statusIndicator.classList.add('status-maintenance');
-                    statusIndicator.innerHTML = '<i class="fas fa-times-circle"></i> Bicicleta Inativa';
-                    break;
+        // Preview da imagem quando URL é alterada
+        document.getElementById('foto_bike').addEventListener('blur', function() {
+            const url = this.value;
+            const img = document.getElementById('preview-image');
+            if (url && img) {
+                img.src = url;
+                img.onerror = function() {
+                    this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150"%3E%3Crect width="200" height="150" fill="%23f8f9fa"/%3E%3Ctext x="100" y="75" text-anchor="middle" fill="%236c757d"%3EImagem não encontrada%3C/text%3E%3C/svg%3E';
+                };
             }
         });
         

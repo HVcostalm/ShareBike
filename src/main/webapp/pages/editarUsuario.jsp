@@ -1,5 +1,95 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+<%@ page import="java.util.List" %>
+
+<%!
+    // Funções auxiliares (declarações de métodos)
+    String formatarCpfCnpj(String cpfCnpj) {
+        if (cpfCnpj == null || cpfCnpj.trim().isEmpty()) {
+            return "";
+        }
+        String digits = cpfCnpj.replaceAll("\\D", "");
+        if (digits.length() == 11) {
+            return digits.replaceAll("(\\d{3})(\\d{3})(\\d{3})(\\d{2})", "$1.$2.$3-$4");
+        } else if (digits.length() == 14) {
+            return digits.replaceAll("(\\d{2})(\\d{3})(\\d{3})(\\d{4})(\\d{2})", "$1.$2.$3/$4-$5");
+        }
+        return cpfCnpj;
+    }
+    
+    String formatarTelefone(String telefone) {
+        if (telefone == null || telefone.trim().isEmpty()) {
+            return "";
+        }
+        String digits = telefone.replaceAll("\\D", "");
+        if (digits.length() == 11) {
+            return digits.replaceAll("(\\d{2})(\\d{5})(\\d{4})", "($1) $2-$3");
+        } else if (digits.length() == 10) {
+            return digits.replaceAll("(\\d{2})(\\d{4})(\\d{4})", "($1) $2-$3");
+        }
+        return telefone;
+    }
+    
+    String obterStatusUsuario(Usuario user) {
+        if (user.isPermissaoAcesso_user()) {
+            return "Ativo";
+        } else {
+            return "Inativo";
+        }
+    }
+    
+    String obterStatusCor(Usuario user) {
+        if (user.isPermissaoAcesso_user()) {
+            return "status-active";
+        } else {
+            return "status-inactive";
+        }
+    }
+    
+    String obterStatusIcon(Usuario user) {
+        if (user.isPermissaoAcesso_user()) {
+            return "fas fa-check-circle";
+        } else {
+            return "fas fa-times-circle";
+        }
+    }
+    
+    String obterPermissaoTexto(boolean permissao) {
+        if (permissao) {
+            return "Habilitado";
+        } else {
+            return "Desabilitado";
+        }
+    }
+    
+    String obterPossuiBikeTexto(boolean possuiBike) {
+        if (possuiBike) {
+            return "Sim";
+        } else {
+            return "Não";
+        }
+    }
+%>
+
+<%
+    // Verificar se o usuário está logado
+    Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+    Usuario admLogado = (Usuario) session.getAttribute("admLogado");
+    Usuario usuario = (Usuario) request.getAttribute("usuario");
+    
+    if (usuario == null && usuarioLogado != null) {
+        usuario = usuarioLogado;
+    } else if (usuario == null && admLogado != null) {
+        usuario = admLogado;
+    }
+    
+    if (usuario == null) {
+        response.sendRedirect("loginUsuario.jsp");
+        return;
+    }
+%>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -17,7 +107,7 @@
         }
         
         .edit-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #008080 0%, #006666 100%);
             color: white;
             padding: 2rem;
             border-radius: 15px;
@@ -95,8 +185,8 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #008080;
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
         }
         
         .form-group textarea {
@@ -150,7 +240,7 @@
             width: 120px;
             height: 120px;
             border-radius: 50%;
-            border: 4px solid #667eea;
+            border: 4px solid #008080;
             margin-bottom: 1rem;
         }
         
@@ -166,7 +256,7 @@
         }
         
         .file-label {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #008080, #006666);
             color: white;
             padding: 0.8rem 2rem;
             border-radius: 8px;
@@ -273,19 +363,23 @@
                 <i class="fas fa-user-edit"></i> 
                 Editar Usuário
             </h1>
-            <p>Edite as informações do usuário: Maria Silva Santos</p>
+            <p>Edite as informações do usuário: <%= usuario.getNomeRazaoSocial_user() != null ? usuario.getNomeRazaoSocial_user() : "Usuário sem nome" %></p>
         </div>
         
         <!-- Formulário de Edição -->
-        <form action="../UsuarioController" method="post" enctype="multipart/form-data">
-            <input type="hidden" name="action" value="editar">
-            <input type="hidden" name="cpfCnpj" value="12345678901">
+        <form action="<%=request.getContextPath()%>/UsuarioController?action=editar" method="post">
+            <input type="hidden" name="cpfCnpj" value="<%= usuario.getCpfCnpj_user() %>">
+            <input type="hidden" name="avaliacao" value="<%= usuario.getAvaliacao_user() != null ? usuario.getAvaliacao_user() : 0 %>">
+            <input type="hidden" name="permissaoAcesso" value="<%= usuario.isPermissaoAcesso_user() %>">
+            <input type="hidden" name="permissaoRank" value="<%= usuario.isPermissaoRank_user() %>">
+            <input type="hidden" name="possuiBike" value="<%= usuario.isPossuiBike_user() %>">
+            <input type="hidden" name="fotoComprBike" value="<%= usuario.getFotoComprBike_user() != null ? usuario.getFotoComprBike_user() : "" %>">
             
             <div class="form-container">
                 <!-- Status do Usuário -->
-                <div class="status-indicator status-active">
-                    <i class="fas fa-check-circle"></i>
-                    Usuário Ativo
+                <div class="status-indicator <%= obterStatusCor(usuario) %>">
+                    <i class="<%= obterStatusIcon(usuario) %>"></i>
+                    Usuário <%= obterStatusUsuario(usuario) %>
                 </div>
                 
                 <div class="alert alert-info">
@@ -295,14 +389,46 @@
                 
                 <!-- Foto do Perfil -->
                 <div class="profile-image">
-                    <img src="../assets/images/user-placeholder.jpg" alt="Foto atual" class="current-image">
-                    <div class="image-upload">
-                        <input type="file" id="foto" name="foto" class="file-input" accept="image/*">
-                        <label for="foto" class="file-label">
-                            <i class="fas fa-camera"></i>
-                            Alterar Foto
+                    <%
+                        String foto = usuario.getFoto_user();
+                        if (foto != null && !foto.trim().isEmpty() && !foto.equals("null")) {
+                    %>
+                        <img src="../assets/images/<%= foto %>" alt="<%= foto %>" class="current-image">
+                    <%
+                        } else {
+                            // Gerar iniciais do nome
+                            String nome = usuario.getNomeRazaoSocial_user();
+                            String iniciais = "";
+                            if (nome != null && !nome.trim().isEmpty()) {
+                                String[] palavras = nome.trim().split("\\s+");
+                                if (palavras.length >= 2) {
+                                    iniciais = String.valueOf(palavras[0].charAt(0)).toUpperCase() + 
+                                              String.valueOf(palavras[palavras.length-1].charAt(0)).toUpperCase();
+                                } else if (palavras.length == 1) {
+                                    iniciais = String.valueOf(palavras[0].charAt(0)).toUpperCase();
+                                    if (palavras[0].length() > 1) {
+                                        iniciais += String.valueOf(palavras[0].charAt(1)).toUpperCase();
+                                    }
+                                }
+                            } else {
+                                iniciais = "U";
+                            }
+                    %>
+                        <div class="current-image" style="display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #008080, #006666); color: white; font-size: 2rem; font-weight: bold;">
+                            <%= iniciais %>
+                        </div>
+                    <%
+                        }
+                    %>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label for="foto">
+                            <i class="fas fa-image"></i>
+                            URL da Foto
                         </label>
-                        <small>Formatos aceitos: JPG, PNG, GIF (máx. 2MB)</small>
+                        <input type="text" id="foto" name="foto" 
+                               value="<%= usuario.getFoto_user() != null ? usuario.getFoto_user() : "" %>"
+                               placeholder="Ex: foto_perfil.jpg">
+                        <small>Digite o nome do arquivo da foto </small>
                     </div>
                 </div>
                 
@@ -320,7 +446,7 @@
                                 Nome/Razão Social *
                             </label>
                             <input type="text" id="nomeRazaoSocial" name="nomeRazaoSocial" 
-                                   value="Maria Silva Santos" required>
+                                   value="<%= usuario.getNomeRazaoSocial_user() != null ? usuario.getNomeRazaoSocial_user() : "" %>" required>
                         </div>
                         
                         <div class="form-group">
@@ -329,7 +455,7 @@
                                 CPF/CNPJ *
                             </label>
                             <input type="text" id="cpfCnpj" name="cpfCnpjDisplay" 
-                                   value="123.456.789-01" readonly>
+                                   value="<%= formatarCpfCnpj(usuario.getCpfCnpj_user()) %>" readonly>
                         </div>
                         
                         <div class="form-group">
@@ -338,7 +464,7 @@
                                 Email *
                             </label>
                             <input type="email" id="email" name="email" 
-                                   value="maria.silva@email.com" required>
+                                   value="<%= usuario.getEmail_user() != null ? usuario.getEmail_user() : "" %>" required>
                         </div>
                         
                         <div class="form-group">
@@ -347,28 +473,16 @@
                                 Telefone
                             </label>
                             <input type="tel" id="telefone" name="telefone" 
-                                   value="(11) 99999-9999">
+                                   value="<%= usuario.getTelefone_user() != null ? usuario.getTelefone_user() : "" %>">
                         </div>
                         
-                        <div class="form-group">
-                            <label for="dataNascimento">
-                                <i class="fas fa-calendar-alt"></i>
-                                Data de Nascimento
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="senha">
+                                <i class="fas fa-key"></i>
+                                Nova Senha
                             </label>
-                            <input type="date" id="dataNascimento" name="dataNascimento" 
-                                   value="1990-05-15">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="tipoUsuario">
-                                <i class="fas fa-user-tag"></i>
-                                Tipo de Usuário *
-                            </label>
-                            <select id="tipoUsuario" name="tipoUsuario" required>
-                                <option value="locador" selected>Locador</option>
-                                <option value="locatario">Locatário</option>
-                                <option value="ambos">Ambos</option>
-                            </select>
+                            <input type="password" id="senha" name="senha" 
+                                   placeholder="Deixe em branco para manter a senha atual">
                         </div>
                     </div>
                 </div>
@@ -382,57 +496,12 @@
                     
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="cep">
-                                <i class="fas fa-mail-bulk"></i>
-                                CEP
-                            </label>
-                            <input type="text" id="cep" name="cep" 
-                                   value="01234-567" onblur="buscarCEP()">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="logradouro">
-                                <i class="fas fa-road"></i>
-                                Logradouro
-                            </label>
-                            <input type="text" id="logradouro" name="logradouro" 
-                                   value="Rua das Flores">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="numero">
-                                <i class="fas fa-hashtag"></i>
-                                Número
-                            </label>
-                            <input type="text" id="numero" name="numero" 
-                                   value="123">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="complemento">
-                                <i class="fas fa-plus-circle"></i>
-                                Complemento
-                            </label>
-                            <input type="text" id="complemento" name="complemento" 
-                                   value="Apto 45">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="bairro">
-                                <i class="fas fa-building"></i>
-                                Bairro
-                            </label>
-                            <input type="text" id="bairro" name="bairro" 
-                                   value="Centro">
-                        </div>
-                        
-                        <div class="form-group">
                             <label for="cidade">
                                 <i class="fas fa-city"></i>
                                 Cidade
                             </label>
                             <input type="text" id="cidade" name="cidade" 
-                                   value="São Paulo">
+                                   value="<%= usuario.getCidade_user() != null ? usuario.getCidade_user() : "" %>">
                         </div>
                         
                         <div class="form-group">
@@ -440,17 +509,17 @@
                                 <i class="fas fa-flag"></i>
                                 Estado
                             </label>
-                            <select id="estado" name="estado">
-                                <option value="SP" selected>São Paulo</option>
-                                <option value="RJ">Rio de Janeiro</option>
-                                <option value="MG">Minas Gerais</option>
-                                <option value="RS">Rio Grande do Sul</option>
-                                <option value="PR">Paraná</option>
-                                <option value="SC">Santa Catarina</option>
-                                <option value="BA">Bahia</option>
-                                <option value="DF">Distrito Federal</option>
-                                <!-- Outros estados -->
-                            </select>
+                            <input type="text" id="estado" name="estado" 
+                                   value="<%= usuario.getEstado_user() != null ? usuario.getEstado_user() : "" %>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="pais">
+                                <i class="fas fa-globe"></i>
+                                País
+                            </label>
+                            <input type="text" id="pais" name="pais" 
+                                   value="<%= usuario.getPais_user() != null ? usuario.getPais_user() : "" %>">
                         </div>
                     </div>
                 </div>
@@ -459,26 +528,8 @@
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-cogs"></i>
-                        Configurações do Usuário
+                        Informações do Sistema
                     </h3>
-                    
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="receberNotificacoes" name="receberNotificacoes" checked>
-                            <label for="receberNotificacoes">
-                                <i class="fas fa-bell"></i>
-                                Receber Notificações por Email
-                            </label>
-                        </div>
-                        
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="perfilPublico" name="perfilPublico" checked>
-                            <label for="perfilPublico">
-                                <i class="fas fa-eye"></i>
-                                Perfil Público (visível para outros usuários)
-                            </label>
-                        </div>
-                    </div>
                     
                     <!-- Campos somente leitura -->
                     <div class="form-grid" style="margin-top: 1.5rem;">
@@ -487,7 +538,7 @@
                                 <i class="fas fa-star"></i>
                                 Avaliação do Usuário
                             </label>
-                            <input type="text" value="4.8 estrelas" readonly style="background: #f8f9fa; color: #6c757d;">
+                            <input type="text" value="<%= usuario.getAvaliacao_user() != null && usuario.getAvaliacao_user() != 0 ? usuario.getAvaliacao_user() + " estrelas" : "Sem avaliação" %>" readonly style="background: #f8f9fa; color: #6c757d;">
                             <small>Este campo é calculado automaticamente pelo sistema</small>
                         </div>
                         
@@ -496,7 +547,7 @@
                                 <i class="fas fa-bicycle"></i>
                                 Possui Bicicleta
                             </label>
-                            <input type="text" value="Sim" readonly style="background: #f8f9fa; color: #6c757d;">
+                            <input type="text" value="<%= obterPossuiBikeTexto(usuario.isPossuiBike_user()) %>" readonly style="background: #f8f9fa; color: #6c757d;">
                             <small>Definido automaticamente ao cadastrar bicicletas</small>
                         </div>
                         
@@ -505,7 +556,7 @@
                                 <i class="fas fa-key"></i>
                                 Permissão de Acesso
                             </label>
-                            <input type="text" value="Ativo" readonly style="background: #f8f9fa; color: #6c757d;">
+                            <input type="text" value="<%= obterPermissaoTexto(usuario.isPermissaoAcesso_user()) %>" readonly style="background: #f8f9fa; color: #6c757d;">
                             <small>Gerenciado pelo administrador do sistema</small>
                         </div>
                         
@@ -514,26 +565,9 @@
                                 <i class="fas fa-trophy"></i>
                                 Permissão Ranking
                             </label>
-                            <input type="text" value="Habilitado" readonly style="background: #f8f9fa; color: #6c757d;">
+                            <input type="text" value="<%= obterPermissaoTexto(usuario.isPermissaoRank_user()) %>" readonly style="background: #f8f9fa; color: #6c757d;">
                             <small>Configurado automaticamente pelo sistema</small>
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Observações Administrativas -->
-                <div class="form-section">
-                    <h3 class="section-title">
-                        <i class="fas fa-sticky-note"></i>
-                        Observações Administrativas
-                    </h3>
-                    
-                    <div class="form-group full-width">
-                        <label for="observacoes">
-                            <i class="fas fa-comment-alt"></i>
-                            Observações Internas
-                        </label>
-                        <textarea id="observacoes" name="observacoes" 
-                                  placeholder="Adicione observações internas sobre este usuário...">Usuário ativo desde janeiro de 2025. Excelente histórico de reservas.</textarea>
                     </div>
                 </div>
             </div>
@@ -545,59 +579,33 @@
                     Salvar Alterações
                 </button>
                 
-                <a href="<%=request.getContextPath()%>/pages/Perfil.jsp" class="btn btn-secondary">
+                <a href="<%=request.getContextPath()%>/UsuarioController?action=perfil" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i>
                     Voltar ao Perfil
                 </a>
-                
-                <button type="button" class="btn btn-danger" onclick="confirmarExclusao()">
-                    <i class="fas fa-trash-alt"></i>
-                    Excluir Usuário
-                </button>
             </div>
         </form>
     </div>
 
     <script>
-        function buscarCEP() {
-            const cep = document.getElementById('cep').value.replace(/\D/g, '');
-            
-            if (cep.length === 8) {
-                console.log('Buscando CEP:', cep);
-                // Simulação de preenchimento automático
-                document.getElementById('logradouro').value = 'Rua Exemplo';
-                document.getElementById('bairro').value = 'Centro';
-                document.getElementById('cidade').value = 'São Paulo';
-                document.getElementById('estado').value = 'SP';
-            }
-        }
-        
-        function confirmarExclusao() {
-            if (confirm('Tem certeza que deseja excluir este usuário?\n\nEsta ação não pode ser desfeita e todos os dados do usuário serão permanentemente removidos.')) {
-                alert('Usuário excluído com sucesso!');
-                window.location.href = '<%=request.getContextPath()%>/pages/Perfil.jsp';
-            }
-        }
-        
-        // Preview da imagem
-        document.getElementById('foto').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.querySelector('.current-image').src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
-        // Formatação de CPF/CNPJ e telefone
+        // Formatação de telefone apenas visual
         document.getElementById('telefone').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             if (value.length <= 11) {
-                value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                if (value.length === 11) {
+                    e.target.style.display = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                } else if (value.length === 10) {
+                    e.target.style.display = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+                }
             }
+            // Manter apenas números no value
             e.target.value = value;
+        });
+        
+        // Antes de enviar o formulário, garantir que dados sejam limpos
+        document.querySelector('form').addEventListener('submit', function() {
+            const telefoneInput = document.getElementById('telefone');
+            telefoneInput.value = telefoneInput.value.replace(/\D/g, '');
         });
         
         console.log('Página de edição de usuário carregada');

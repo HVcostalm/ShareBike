@@ -1,12 +1,255 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Reserva" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+<%@ page import="br.com.sharebike.model.Bicicleta" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="java.time.temporal.ChronoUnit" %>
+<%!
+// Função para formatação de datas
+String formatarData(LocalDateTime data) {
+    if (data == null) return "N/A";
+    return data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+}
+
+// Função para calcular tempo restante
+String calcularTempoRestante(LocalDateTime dataFim) {
+    if (dataFim == null) return "N/A";
+    LocalDateTime agora = LocalDateTime.now();
+    if (agora.isAfter(dataFim)) return "Expirado";
+    
+    long totalMinutos = ChronoUnit.MINUTES.between(agora, dataFim);
+    long dias = totalMinutos / (24 * 60);
+    long horas = (totalMinutos % (24 * 60)) / 60;
+    long minutos = totalMinutos % 60;
+    
+    if (dias > 0) {
+        return dias + " dia" + (dias > 1 ? "s" : "") + 
+               (horas > 0 ? " " + horas + "h" : "") + 
+               (minutos > 0 ? " " + minutos + "min" : "");
+    } else if (horas > 0) {
+        return horas + "h" + (minutos > 0 ? " " + minutos + "min" : "");
+    } else {
+        return minutos + "min";
+    }
+}
+
+// Função para calcular duração
+String calcularDuracao(LocalDateTime inicio, LocalDateTime fim) {
+    if (inicio == null || fim == null) return "N/A";
+    
+    long horas = ChronoUnit.HOURS.between(inicio, fim);
+    long dias = horas / 24;
+    horas = horas % 24;
+    
+    if (dias > 0) {
+        return dias + " dia" + (dias > 1 ? "s" : "") + (horas > 0 ? " " + horas + "h" : "");
+    }
+    return horas + "h";
+}
+
+// Função para obter classe CSS do status
+String obterClasseStatus(String status) {
+    if (status == null) return "status-indefinido";
+    switch (status.toUpperCase()) {
+        case "PENDENTE": return "status-pendente";
+        case "CONFIRMADA": return "status-confirmada";
+        case "NEGADA": return "status-negada";
+        case "EM ANDAMENTO": return "status-em-andamento";
+        case "FINALIZADA": return "status-finalizada";
+        default: return "status-indefinido";
+    }
+}
+
+// Função para traduzir status
+String traduzirStatus(String status) {
+    if (status == null) return "Indefinido";
+    switch (status.toUpperCase()) {
+        case "PENDENTE": return "Aguardando Aprovação";
+        case "CONFIRMADA": return "Confirmada";
+        case "NEGADA": return "Negada";
+        case "EM ANDAMENTO": return "Em Andamento";
+        case "FINALIZADA": return "Finalizada";
+        default: return status;
+    }
+}
+%>
+<%
+// Verificar se usuário está logado
+Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+if (usuarioLogado == null) {
+    response.sendRedirect(request.getContextPath() + "/pages/loginUsuario.jsp");
+    return;
+}
+
+// Obter listas de reservas por status (vindas do controller)
+List<Reserva> todasReservas = (List<Reserva>) request.getAttribute("todasReservas");
+List<Reserva> reservasPendentes = (List<Reserva>) request.getAttribute("reservasPendentes");
+List<Reserva> reservasConfirmadas = (List<Reserva>) request.getAttribute("reservasConfirmadas");
+List<Reserva> reservasNegadas = (List<Reserva>) request.getAttribute("reservasNegadas");
+List<Reserva> reservasEmAndamento = (List<Reserva>) request.getAttribute("reservasEmAndamento");
+List<Reserva> reservasFinalizadas = (List<Reserva>) request.getAttribute("reservasFinalizadas");
+
+// *** NOVO: Obter mapa de feedback ***
+Map<Integer, Boolean> mapaFeedbackLocatario = (Map<Integer, Boolean>) request.getAttribute("mapaFeedbackLocatario");
+
+// Contadores para estatísticas
+int totalReservas = todasReservas != null ? todasReservas.size() : 0;
+int totalPendentes = reservasPendentes != null ? reservasPendentes.size() : 0;
+int totalConfirmadas = reservasConfirmadas != null ? reservasConfirmadas.size() : 0;
+int totalNegadas = reservasNegadas != null ? reservasNegadas.size() : 0;
+int totalEmAndamento = reservasEmAndamento != null ? reservasEmAndamento.size() : 0;
+int totalFinalizadas = reservasFinalizadas != null ? reservasFinalizadas.size() : 0;
+
+// Se não há dados, usar a lista vinda do controller
+if (todasReservas == null) {
+    todasReservas = (List<Reserva>) request.getAttribute("listaReservas");
+    totalReservas = todasReservas != null ? todasReservas.size() : 0;
+}
+%>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Minhas Reservas - Locatário</title>
-    <link rel="stylesheet" href="../assets/css/reservas.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/assets/css/reservas.css">
+    <link rel="stylesheet" href="<%=request.getContextPath()%>/assets/css/reservasLocatario.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #666;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .empty-state p {
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .empty-state .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(56, 178, 172, 0.3);
+        }
+        
+        .empty-state .btn:hover {
+            background: linear-gradient(135deg, #319795, #0d9488);
+            transform: translateY(-2px);
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 8px 25px rgba(56, 178, 172, 0.4);
+        }
+        
+        /* Ajustes para status */
+        .status-pendente { background: #fff3cd; color: #856404; }
+        .status-confirmada { background: #d4edda; color: #155724; }
+        .status-negada { background: #f8d7da; color: #721c24; }
+        .status-em-andamento { background: #cce7ff; color: #004085; }
+        .status-finalizada { background: #f8f9fa; color: #6c757d; }
+        .status-indefinido { background: #e2e3e5; color: #495057; }
+        
+        /* Correção para botão Meu Perfil */
+        .nav .nav-profile {
+            background: #38b2ac !important;
+            background-image: none !important;
+        }
+        
+        .nav .nav-profile:hover {
+            background: #0d9488 !important;
+            background-image: none !important;
+        }
+        
+        /* Centralização forçada da navegação */
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            text-decoration: none;
+            color: white;
+            background-color: #38b2ac;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin: 0;
+        }
+        
+        .nav a:hover, .nav a.active {
+            background: #0d9488;
+            color: white;
+        }
+        
+        /* Garantir que o container não interfira na centralização */
+        .container {
+            max-width: 1200px;
+            margin: 30px auto 0 auto;
+            padding: 20px;
+            text-align: left;
+            overflow: visible !important;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Estilos para header igual ao bicicletasLocatario */
+        header {
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -15,385 +258,221 @@
     
     <div class="container">
         <nav class="nav">
-            <a href="<%=request.getContextPath()%>/pages/bicicletasLocatario.jsp"><i class="fas fa-search"></i> Buscar Bicicletas</a>
-            <a href="<%=request.getContextPath()%>/pages/reservasLocatario.jsp"><i class="fas fa-calendar-check"></i> Minhas Reservas</a>
-            <a href="<%=request.getContextPath()%>/pages/fazerFeedbackLocatario.jsp"><i class="fas fa-comment-dots"></i> Dar Feedback</a>
-            <a href="<%=request.getContextPath()%>/pages/fazerReserva.jsp"><i class="fas fa-calendar-plus"></i> Nova Reserva</a>
+            <a href="<%=request.getContextPath()%>/UsuarioController?action=perfil"><i class="fas fa-user"></i> Meu Perfil</a>
+            <a href="<%=request.getContextPath()%>/BicicletaController?action=lista-locatario"><i class="fas fa-search"></i> Buscar Bicicletas</a>
+            <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas"><i class="fas fa-calendar-check"></i> Minhas Reservas</a>
+            <a href="<%=request.getContextPath()%>/FeedbackController?action=pagina-locatario"><i class="fas fa-comment-dots"></i> Dar Feedback</a>
             <a href="<%=request.getContextPath()%>/pages/rankingLocatario.jsp"><i class="fas fa-trophy"></i> Ranking</a>
         </nav>
         
-        <!-- Estatísticas do Locatário - Baseado no modelo Reserva -->
+        <!-- Estatísticas do Locatário - Dados Dinâmicos -->
         <div class="stats-summary">
             <h3><i class="fas fa-chart-pie"></i> Meu Histórico</h3>
             <div class="stats-row">
                 <div class="stat-item">
-                    <div class="stat-number">23</div>
+                    <div class="stat-number"><%=totalReservas%></div>
                     <div class="stat-label">Total de Reservas</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">2</div>
+                    <div class="stat-number"><%=totalPendentes%></div>
                     <div class="stat-label">Pendentes</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">1</div>
+                    <div class="stat-number"><%=totalConfirmadas + totalEmAndamento%></div>
                     <div class="stat-label">Em Andamento</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">18</div>
+                    <div class="stat-number"><%=totalFinalizadas%></div>
                     <div class="stat-label">Finalizadas</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">4.7</div>
+                    <div class="stat-number"><%=totalNegadas%></div>
+                    <div class="stat-label">Negadas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number"><%=usuarioLogado.getAvaliacao_user() != null ? String.format("%.1f", usuarioLogado.getAvaliacao_user()) : "N/A"%></div>
                     <div class="stat-label">Minha Avaliação</div>
                 </div>
             </div>
         </div>
         
-        <!-- Filtros por Status -->
+        <!-- Filtros por Status - Dados Dinâmicos -->
         <div class="filter-tabs">
             <button class="filter-tab active" onclick="filterReservations('todas')">
-                <i class="fas fa-list"></i> Todas (23)
+                <i class="fas fa-list"></i> Todas (<%=totalReservas%>)
             </button>
             <button class="filter-tab" onclick="filterReservations('pendentes')">
-                <i class="fas fa-clock"></i> Pendentes (2)
+                <i class="fas fa-clock"></i> Pendentes (<%=totalPendentes%>)
             </button>
             <button class="filter-tab" onclick="filterReservations('confirmadas')">
-                <i class="fas fa-check"></i> Confirmadas (1)
+                <i class="fas fa-check"></i> Confirmadas (<%=totalConfirmadas%>)
             </button>
-            <button class="filter-tab" onclick="filterReservations('ativas')">
-                <i class="fas fa-play-circle"></i> Em Andamento (1)
+            <button class="filter-tab" onclick="filterReservations('em-andamento')">
+                <i class="fas fa-play-circle"></i> Em Andamento (<%=totalEmAndamento%>)
             </button>
             <button class="filter-tab" onclick="filterReservations('finalizadas')">
-                <i class="fas fa-flag-checkered"></i> Finalizadas (19)
+                <i class="fas fa-flag-checkered"></i> Finalizadas (<%=totalFinalizadas%>)
+            </button>
+            <button class="filter-tab" onclick="filterReservations('negadas')">
+                <i class="fas fa-times-circle"></i> Negadas (<%=totalNegadas%>)
             </button>
         </div>
         
-        <!-- Lista de Reservas -->
+        <!-- Lista de Reservas - Dados Dinâmicos -->
         <div class="reservations-list">
-            <!-- Reserva Pendente -->
-            <div class="reservation-card" data-status="pendentes">
+            <% 
+            if (todasReservas != null && !todasReservas.isEmpty()) {
+                for (Reserva reserva : todasReservas) {
+                    String statusLower = reserva.getStatus_reserv().toLowerCase();
+                    String dataStatus = "";
+                    
+                    // Determinar filtro apropriado
+                    String filtroStatus = "";
+                    switch (reserva.getStatus_reserv().toUpperCase()) {
+                        case "PENDENTE": filtroStatus = "pendentes"; break;
+                        case "CONFIRMADA": filtroStatus = "confirmadas"; break;
+                        case "NEGADA": filtroStatus = "negadas"; break;
+                        case "EM ANDAMENTO": filtroStatus = "em-andamento"; break;
+                        case "FINALIZADA": filtroStatus = "finalizadas"; break;
+                        default: filtroStatus = "todas"; break;
+                    }
+            %>
+            <div class="reservation-card" data-status="<%=filtroStatus%>">
                 <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-001</div>
-                    <div class="reservation-status status-pendente">Aguardando Aprovação</div>
+                    <div class="reservation-id">#RSV-<%=String.format("%03d", reserva.getId_reserv())%></div>
+                    <div class="reservation-status <%=obterClasseStatus(reserva.getStatus_reserv())%>">
+                        <%=traduzirStatus(reserva.getStatus_reserv())%>
+                    </div>
                 </div>
                 <div class="reservation-content">
-                    <img src="../assets/images/rent1.jpg" alt="Mountain Explorer" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/ffc107/000000?text=Pendente'">
+                    <%
+                    // Definir URL de placeholder baseada no status
+                    String placeholderUrl = "https://via.placeholder.com/200x150/";
+                    switch (reserva.getStatus_reserv().toUpperCase()) {
+                        case "PENDENTE":
+                            placeholderUrl += "ffc107/000000?text=Pendente";
+                            break;
+                        case "CONFIRMADA":
+                            placeholderUrl += "28a745/ffffff?text=Confirmada";
+                            break;
+                        case "NEGADA":
+                            placeholderUrl += "dc3545/ffffff?text=Negada";
+                            break;
+                        case "EM ANDAMENTO":
+                            placeholderUrl += "007bff/ffffff?text=Em+Andamento";
+                            break;
+                        case "FINALIZADA":
+                            placeholderUrl += "6c757d/ffffff?text=Finalizada";
+                            break;
+                        default:
+                            placeholderUrl += "6c757d/ffffff?text=" + reserva.getStatus_reserv().replace(" ", "+");
+                            break;
+                    }
+                    %>
+                    <img src="<%=reserva.getBicicleta().getFoto_bike()%>" 
+                         alt="<%=reserva.getBicicleta().getNome_bike()%>" 
+                         class="bike-image">
                     <div class="reservation-details">
-                        <div class="bike-name">Mountain Explorer MX-2024</div>
+                        <div class="bike-name"><%=reserva.getBicicleta().getNome_bike()%></div>
                         <div class="detail-row">
                             <i class="fas fa-user"></i>
-                            <span>Proprietário: João Carlos Silva</span>
+                            <span>Proprietário: <%=reserva.getBicicleta().getUsuario().getNomeRazaoSocial_user()%></span>
                         </div>
                         <div class="detail-row">
                             <i class="fas fa-bicycle"></i>
-                            <span>Tipo: Mountain Bike</span>
+                            <span>Tipo: <%=reserva.getBicicleta().getTipo_bike()%></span>
                         </div>
                         <div class="detail-row">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>Local: Vila Madalena, São Paulo - SP</span>
+                            <span>Local: <%=reserva.getBicicleta().getLocalEntr_bike()%></span>
                         </div>
                         <div class="detail-row">
                             <i class="fas fa-tools"></i>
-                            <span>Estado: Excelente conservação</span>
+                            <span>Estado: <%=reserva.getBicicleta().getEstadoConserv_bike()%></span>
                         </div>
-                        <div class="detail-row">
-                            <i class="fas fa-clock"></i>
-                            <span>Solicitado há: 2 horas</span>
-                        </div>
-                        <div class="reservation-dates">
-                            <div class="dates-row">
-                                <div class="date-info">
-                                    <div class="date-label">Check-in Desejado</div>
-                                    <div class="date-value">12/08/2025 14:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Check-out Desejado</div>
-                                    <div class="date-value">15/08/2025 14:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Status</div>
-                                    <div class="date-value">Aguardando resposta</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="detalheReservaLocatario.jsp?id=RSV-USER-001" class="btn btn-info">
-                                <i class="fas fa-eye"></i> Ver Detalhes
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="contactOwner('RSV-USER-001')">
-                                <i class="fas fa-envelope"></i> Contatar Proprietário
-                            </a>
-                            <a href="#" class="btn btn-warning" onclick="modifyRequest('RSV-USER-001')">
-                                <i class="fas fa-edit"></i> Modificar
-                            </a>
-                            <a href="#" class="btn btn-danger" onclick="cancelRequest('RSV-USER-001')">
-                                <i class="fas fa-times"></i> Cancelar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Reserva Confirmada -->
-            <div class="reservation-card" data-status="confirmadas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-002</div>
-                    <div class="reservation-status status-confirmada">Confirmada</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/rent2.jpg" alt="Speed Urbana" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/28a745/ffffff?text=Confirmada'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Speed Urbana SP-2024</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Proprietário: Maria Silva Santos</span>
-                        </div>
+                        <% if (reserva.getBicicleta().getUsuario().getTelefone_user() != null) { %>
                         <div class="detail-row">
                             <i class="fas fa-phone"></i>
-                            <span>Contato: (21) 99999-8888</span>
+                            <span>Contato: <%=reserva.getBicicleta().getUsuario().getTelefone_user()%></span>
                         </div>
-                        <div class="detail-row">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Retirada: Rua Copacabana, 456 - Rio de Janeiro</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-bicycle"></i>
-                            <span>Tipo: Speed - Excelente estado</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Aprovada em: 07/08/2025 09:15</span>
-                        </div>
+                        <% } %>
+                        
                         <div class="reservation-dates">
                             <div class="dates-row">
                                 <div class="date-info">
-                                    <div class="date-label">Retirada</div>
-                                    <div class="date-value">10/08/2025 10:00</div>
+                                    <div class="date-label">
+                                        <%=reserva.getStatus_reserv().equals("PENDENTE") ? "Check-in Desejado" : 
+                                           reserva.getStatus_reserv().equals("EM ANDAMENTO") ? "Retirada" : "Retirada"%>
+                                    </div>
+                                    <div class="date-value"><%=formatarData(reserva.getDataCheckIn_reserv())%></div>
                                 </div>
                                 <div class="date-info">
-                                    <div class="date-label">Devolução</div>
-                                    <div class="date-value">12/08/2025 18:00</div>
+                                    <div class="date-label">
+                                        <%=reserva.getStatus_reserv().equals("PENDENTE") ? "Check-out Desejado" : 
+                                           reserva.getStatus_reserv().equals("EM ANDAMENTO") ? "Devolução Prevista" : "Devolução"%>
+                                    </div>
+                                    <div class="date-value"><%=formatarData(reserva.getDataCheckOut_reserv())%></div>
                                 </div>
                                 <div class="date-info">
-                                    <div class="date-label">Tempo Restante</div>
-                                    <div class="date-value">2 dias 2h</div>
+                                    <div class="date-label">
+                                        <%=reserva.getStatus_reserv().equals("PENDENTE") ? "Status" : 
+                                           reserva.getStatus_reserv().equals("EM ANDAMENTO") ? "Tempo Restante" : 
+                                           reserva.getStatus_reserv().equals("FINALIZADA") ? "Duração" : "Duração"%>
+                                    </div>
+                                    <div class="date-value">
+                                        <%=reserva.getStatus_reserv().equals("PENDENTE") ? "Aguardando resposta" : 
+                                           reserva.getStatus_reserv().equals("EM ANDAMENTO") ? calcularTempoRestante(reserva.getDataCheckOut_reserv()) : 
+                                           calcularDuracao(reserva.getDataCheckIn_reserv(), reserva.getDataCheckOut_reserv())%>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        
                         <div class="reservation-actions">
-                            <a href="detalheReservaLocatario.jsp?id=RSV-USER-002" class="btn btn-info">
+                            <a href="<%=request.getContextPath()%>/ReservaController?action=exibir&id=<%=reserva.getId_reserv()%>&origem=locatario" class="btn btn-info">
                                 <i class="fas fa-eye"></i> Ver Detalhes
                             </a>
-                            <a href="#" class="btn btn-success" onclick="confirmPickup('RSV-USER-002')">
-                                <i class="fas fa-handshake"></i> Confirmar Retirada
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="getDirections('RSV-USER-002')">
-                                <i class="fas fa-route"></i> Como Chegar
-                            </a>
-                            <a href="#" class="btn btn-info" onclick="contactOwner('RSV-USER-002')">
-                                <i class="fas fa-envelope"></i> Contatar
-                            </a>
+                            
+                            <% 
+                            // Verificar se é finalizada E se ainda não fez feedback
+                            if (reserva.getStatus_reserv().equals("FINALIZADA")) {
+                                Boolean jaFezFeedback = (mapaFeedbackLocatario != null) ? mapaFeedbackLocatario.get(reserva.getId_reserv()) : false;
+                                if (jaFezFeedback == null) jaFezFeedback = false;
+                                
+                                if (!jaFezFeedback) {
+                            %>
+                                <!-- Botão só aparece se ainda não fez feedback -->
+                                <a href="#" class="btn btn-info" onclick="viewFeedback('<%=reserva.getId_reserv()%>')">
+                                    <i class="fas fa-comments"></i> Realizar Feedback
+                                </a>
+                            <% 
+                                } else {
+                            %>
+                                <!-- Feedback já realizado -->
+                                <span class="btn btn-secondary" style="cursor: default;">
+                                    <i class="fas fa-check"></i> Feedback Realizado
+                                </span>
+                            <% 
+                                }
+                            } 
+                            %>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Reserva Ativa -->
-            <div class="reservation-card" data-status="ativas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-003</div>
-                    <div class="reservation-status status-ativa">Em Andamento</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/rent3.jpg" alt="Urbana City" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/007bff/ffffff?text=Em+Uso'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Urbana City UB-2024</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Proprietário: Carlos Oliveira</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-clock"></i>
-                            <span>Em uso há: 6 horas e 30 minutos</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Local Devolução: Praça da Savassi, BH</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>Duração: 2 dias</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-battery-three-quarters"></i>
-                            <span>Estado: Funcionando perfeitamente</span>
-                        </div>
-                        <div class="reservation-dates">
-                            <div class="dates-row">
-                                <div class="date-info">
-                                    <div class="date-label">Retirada</div>
-                                    <div class="date-value">07/08/2025 14:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Devolução Prevista</div>
-                                    <div class="date-value">09/08/2025 14:00</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Tempo Restante</div>
-                                    <div class="date-value">1 dia 7h 30m</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="detalheReservaLocatario.jsp?id=RSV-USER-003" class="btn btn-info">
-                                <i class="fas fa-eye"></i> Ver Detalhes
-                            </a>
-                            <a href="#" class="btn btn-warning" onclick="reportIssue('RSV-USER-003')">
-                                <i class="fas fa-exclamation-triangle"></i> Reportar Problema
-                            </a>
-                            <a href="#" class="btn btn-info" onclick="extendReservation('RSV-USER-003')">
-                                <i class="fas fa-clock"></i> Estender Tempo
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="getReturnDirections('RSV-USER-003')">
-                                <i class="fas fa-route"></i> Como Devolver
-                            </a>
-                            <a href="#" class="btn btn-success" onclick="confirmReturn('RSV-USER-003')">
-                                <i class="fas fa-check-circle"></i> Devolver
-                            </a>
-                        </div>
-                    </div>
-                </div>
+            <% 
+                }
+            } else { 
+            %>
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <h3>Nenhuma reserva encontrada</h3>
+                <p>Você ainda não fez nenhuma reserva. Que tal começar agora?</p>
+                <a href="<%=request.getContextPath()%>/BicicletaController?action=lista-locatario" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Buscar Bicicletas
+                </a>
             </div>
-            
-            <!-- Reserva Finalizada Recente -->
-            <div class="reservation-card" data-status="finalizadas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-004</div>
-                    <div class="reservation-status status-finalizada">Finalizada</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/rent4.jpg" alt="Dobrável Compacta" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/6c757d/ffffff?text=Finalizada'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Dobrável Compacta DB-2024</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Proprietário: Ana Paula</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Finalizada em: 05/08/2025 16:00</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-star"></i>
-                            <span>Sua Avaliação: 4.8/5.0</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>Duração: 2 dias</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-heart"></i>
-                            <span>Experiência: Excelente!</span>
-                        </div>
-                        <div class="reservation-dates">
-                            <div class="dates-row">
-                                <div class="date-info">
-                                    <div class="date-label">Período de Uso</div>
-                                    <div class="date-value">03/08 - 05/08/2025</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Duração</div>
-                                    <div class="date-value">2 dias</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Km Percorridos</div>
-                                    <div class="date-value">~45 km</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="detalheReservaLocatario.jsp?id=RSV-USER-004" class="btn btn-primary">
-                                <i class="fas fa-eye"></i> Ver Detalhes
-                            </a>
-                            <a href="#" class="btn btn-info" onclick="viewFeedback('RSV-USER-004')">
-                                <i class="fas fa-comments"></i> Ver Avaliações
-                            </a>
-                            <a href="#" class="btn btn-success" onclick="bookAgain('RSV-USER-004')">
-                                <i class="fas fa-redo"></i> Reservar Novamente
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="downloadReceipt('RSV-USER-004')">
-                                <i class="fas fa-download"></i> Comprovante
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Mais uma Reserva Finalizada -->
-            <div class="reservation-card" data-status="finalizadas">
-                <div class="reservation-header">
-                    <div class="reservation-id">#RSV-USER-005</div>
-                    <div class="reservation-status status-finalizada">Finalizada</div>
-                </div>
-                <div class="reservation-content">
-                    <img src="../assets/images/rent5.jpg" alt="Durban Dobrável" class="bike-image" onerror="this.src='https://via.placeholder.com/200x150/6c757d/ffffff?text=Finalizada'">
-                    <div class="reservation-details">
-                        <div class="bike-name">Durban Sampa Pro</div>
-                        <div class="detail-row">
-                            <i class="fas fa-user"></i>
-                            <span>Proprietário: Pedro Costa</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Finalizada em: 01/08/2025 12:00</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-star"></i>
-                            <span>Sua Avaliação: 4.2/5.0</span>
-                        </div>
-                        <div class="detail-row">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>Duração: 1 dia</span>
-                        </div>
-                        <div class="reservation-dates">
-                            <div class="dates-row">
-                                <div class="date-info">
-                                    <div class="date-label">Período de Uso</div>
-                                    <div class="date-value">31/07 - 01/08/2025</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Duração</div>
-                                    <div class="date-value">1 dia</div>
-                                </div>
-                                <div class="date-info">
-                                    <div class="date-label">Uso</div>
-                                    <div class="date-value">Transporte urbano</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="reservation-actions">
-                            <a href="detalheReservaLocatario.jsp?id=RSV-USER-005" class="btn btn-primary">
-                                <i class="fas fa-eye"></i> Ver Detalhes
-                            </a>
-                            <a href="#" class="btn btn-info" onclick="viewFeedback('RSV-USER-005')">
-                                <i class="fas fa-comments"></i> Ver Avaliações
-                            </a>
-                            <a href="#" class="btn btn-success" onclick="bookAgain('RSV-USER-005')">
-                                <i class="fas fa-redo"></i> Reservar Novamente
-                            </a>
-                            <a href="#" class="btn btn-primary" onclick="downloadReceipt('RSV-USER-005')">
-                                <i class="fas fa-download"></i> Comprovante
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="back-button">
-            <a href="<%=request.getContextPath()%>/pages/Perfil.jsp" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Voltar ao Perfil
-            </a>
+            <% } %>
         </div>
     </div>
     
@@ -482,8 +561,8 @@
         }
         
         function viewFeedback(reservationId) {
-            alert('Ver avaliações da reserva: ' + reservationId);
-            // Implementar visualização de feedback
+            // Redirecionar para página de feedback do locatário com ID da reserva
+            window.location.href = '<%=request.getContextPath()%>/FeedbackController?action=fazer-avaliacao&reservaId=' + reservationId;
         }
         
         function bookAgain(reservationId) {
@@ -496,6 +575,11 @@
         function downloadReceipt(reservationId) {
             alert('Baixando comprovante da reserva: ' + reservationId);
             // Implementar download do comprovante
+        }
+        
+        function viewRejectionReason(reservationId) {
+            alert('Ver motivo da rejeição da reserva: ' + reservationId);
+            // Implementar visualização do motivo de rejeição
         }
     </script>
 </body>

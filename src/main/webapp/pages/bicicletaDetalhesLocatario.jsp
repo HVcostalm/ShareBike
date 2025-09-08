@@ -1,21 +1,162 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Bicicleta" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+<%@ page import="br.com.sharebike.model.Reserva" %>
+<%@ page import="br.com.sharebike.model.Feedback" %>
+<%@ page import="br.com.sharebike.model.Disponibilidade" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+
+<%!
+// Função para gerar estrelas da avaliação
+String gerarEstrelas(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "<i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i>";
+    }
+    
+    StringBuilder estrelas = new StringBuilder();
+    int estrelasCompletas = (int) Math.floor(avaliacao);
+    boolean meiaEstrela = (avaliacao - estrelasCompletas) >= 0.5;
+    
+    for (int i = 0; i < estrelasCompletas; i++) {
+        estrelas.append("<i class=\"fas fa-star\"></i>");
+    }
+    if (meiaEstrela && estrelasCompletas < 5) {
+        estrelas.append("<i class=\"fas fa-star-half-alt\"></i>");
+        estrelasCompletas++;
+    }
+    for (int i = estrelasCompletas; i < 5; i++) {
+        estrelas.append("<i class=\"far fa-star\"></i>");
+    }
+    
+    return estrelas.toString();
+}
+
+// Função para gerar estrelas da avaliação (int)
+String gerarEstrelas(int avaliacao) {
+    return gerarEstrelas((float) avaliacao);
+}
+
+// Função para formatar avaliação
+String formatarAvaliacao(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "Sem Avaliação";
+    }
+    return String.format("%.1f/5.0", avaliacao);
+}
+
+// Função para exibir avaliação completa (estrelas + texto)
+String exibirAvaliacaoCompleta(Float avaliacao) {
+    if (avaliacao == null || avaliacao <= 0) {
+        return "<i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i><i class=\"far fa-star\"></i> Sem Avaliação";
+    }
+    return gerarEstrelas(avaliacao) + " (" + String.format("%.1f/5.0", avaliacao) + ")";
+}
+
+// Função para exibir avaliação completa com int (para feedbacks)
+String exibirAvaliacaoCompletaInt(int avaliacao) {
+    if (avaliacao <= 0) {
+        return "Sem Avaliação";
+    }
+    Float avaliacaoFloat = (float) avaliacao;
+    return gerarEstrelas(avaliacaoFloat) + " (" + avaliacao + "/5)";
+}
+%>
+
+<%
+// Obter dados enviados pelo controller
+Bicicleta bicicleta = (Bicicleta) request.getAttribute("bicicleta");
+Usuario proprietario = (Usuario) request.getAttribute("proprietario");
+List<Reserva> reservasBicicleta = (List<Reserva>) request.getAttribute("reservasBicicleta");
+List<Feedback> feedbacksBicicleta = (List<Feedback>) request.getAttribute("feedbacksBicicleta");
+List<Disponibilidade> disponibilidadesBicicleta = (List<Disponibilidade>) request.getAttribute("disponibilidadesBicicleta");
+
+// Obter métricas calculadas pelo controller
+Integer totalReservasAttr = (Integer) request.getAttribute("totalReservas");
+Integer reservasAtivasAttr = (Integer) request.getAttribute("reservasAtivas");
+Integer totalFeedbacksAttr = (Integer) request.getAttribute("totalFeedbacks");
+Double mediaAvaliacoesFeedbackAttr = (Double) request.getAttribute("mediaAvaliacoesFeedback");
+
+int totalReservas = totalReservasAttr != null ? totalReservasAttr : 0;
+int reservasAtivas = reservasAtivasAttr != null ? reservasAtivasAttr : 0;
+int totalFeedbacks = totalFeedbacksAttr != null ? totalFeedbacksAttr : 0;
+double mediaAvaliacoesFeedback = mediaAvaliacoesFeedbackAttr != null ? mediaAvaliacoesFeedbackAttr : 0.0;
+
+// Verificar se há dados
+if (bicicleta == null) {
+    response.sendRedirect(request.getContextPath() + "/BicicletaController?action=lista-locatario");
+    return;
+}
+%>
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Detalhes da Bicicleta - ShareBike</title>
-    <link rel="stylesheet" href="../assets/css/bicicletas.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .bike-details-container {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 20px;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            text-align: center;
+            border-radius: 10px;
+        }
+        
+        .page-header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        .nav {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .nav a {
+            color: #38b2ac;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            border: 2px solid #38b2ac;
+        }
+        
+        .nav a:hover, .nav a.active {
+            background: #38b2ac;
+            color: white;
         }
         
         .bike-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
             color: white;
             padding: 2rem;
             border-radius: 15px;
@@ -91,7 +232,7 @@
         .section-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #333;
+            color: #38b2ac;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
@@ -117,7 +258,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
             color: white;
         }
         
@@ -136,7 +277,35 @@
             font-size: 0.9rem;
         }
         
-        .availability-calendar {
+        .owner-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .owner-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .owner-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+        
+        .availability-section {
             background: white;
             padding: 2rem;
             border-radius: 15px;
@@ -144,71 +313,40 @@
             margin-bottom: 2rem;
         }
         
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        
-        .calendar-day {
-            aspect-ratio: 1;
+        .availability-item {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
+            padding: 1rem;
+            border: 1px solid #e9ecef;
             border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            margin-bottom: 1rem;
         }
         
-        .calendar-day.header {
-            background: #f8f9fa;
-            color: #6c757d;
-            font-weight: 600;
-            cursor: default;
+        .availability-item:last-child {
+            margin-bottom: 0;
         }
         
-        .calendar-day.available {
+        .availability-dates {
+            flex: 1;
+        }
+        
+        .availability-status {
+            padding: 0.5rem 1rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        
+        .status-disponivel {
             background: #d4edda;
             color: #155724;
         }
         
-        .calendar-day.available:hover {
-            background: #c3e6cb;
-            transform: scale(1.05);
-        }
-        
-        .calendar-day.unavailable {
+        .status-indisponivel {
             background: #f8d7da;
             color: #721c24;
-            cursor: not-allowed;
-        }
-        
-        .calendar-day.reserved {
-            background: #fff3cd;
-            color: #856404;
-            cursor: not-allowed;
-        }
-        
-        .calendar-legend {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
         }
         
         .review-section {
@@ -234,7 +372,7 @@
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #38b2ac, #0d9488);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -280,8 +418,8 @@
             margin: 2rem 0;
         }
         
-        .btn-primary {
-            background: linear-gradient(135deg, #007bff, #0056b3);
+        .btn {
+            background: #38b2ac;
             color: white;
             padding: 1rem 2rem;
             border: none;
@@ -293,31 +431,44 @@
             align-items: center;
             gap: 0.5rem;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         
-        .btn-primary:hover {
+        .btn:hover {
+            background: #0d9488;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.3);
+            color: white;
+            text-decoration: none;
         }
         
         .btn-secondary {
             background: #6c757d;
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.3s ease;
         }
         
         .btn-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
+            background: #545b62;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            border-top: 1px solid #eee;
+            margin-top: 40px;
+            background: white;
+            border-radius: 10px;
         }
         
         @media (max-width: 768px) {
@@ -343,361 +494,218 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1><i class="fas fa-bicycle"></i> Detalhes da Bicicleta</h1>
-    </header>
-    
     <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-bicycle"></i> Detalhes da Bicicleta</h1>
+        </div>
+        
         <nav class="nav">
-            <a href="<%=request.getContextPath()%>/pages/bicicletasLocatario.jsp"><i class="fas fa-search"></i> Buscar Bicicletas</a>
-            <a href="<%=request.getContextPath()%>/pages/reservasLocatario.jsp"><i class="fas fa-calendar-check"></i> Minhas Reservas</a>
-            <a href="<%=request.getContextPath()%>/pages/fazerFeedbackLocatario.jsp"><i class="fas fa-comment-dots"></i> Dar Feedback</a>
-            <a href="<%=request.getContextPath()%>/pages/fazerReserva.jsp"><i class="fas fa-calendar-plus"></i> Nova Reserva</a>
-            <a href="<%=request.getContextPath()%>/pages/rankingLocatario.jsp"><i class="fas fa-trophy"></i> Ranking</a>
+            <a href="<%=request.getContextPath()%>/BicicletaController?action=lista-locatario"><i class="fas fa-search"></i> Buscar Bicicletas</a>
         </nav>
         
-        <div class="bike-details-container">
-            <!-- Cabeçalho da Bicicleta -->
-            <div class="bike-header">
-                <img src="../assets/images/bike1.jpg" alt="Trek FX 3 Disc" class="bike-image-main" onerror="this.src='https://via.placeholder.com/300x200/007bff/ffffff?text=Trek+FX+3'">
-                <div class="bike-info-main">
-                    <div class="bike-title">Trek FX 3 Disc</div>
-                    <div class="bike-subtitle">Bicicleta Híbrida de Alta Performance</div>
-                    <div class="bike-stats">
-                        <div class="stat-item">
-                            <div class="stat-value">4.8</div>
-                            <div class="stat-label">Avaliação</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">23</div>
-                            <div class="stat-label">Avaliações</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">87%</div>
-                            <div class="stat-label">Disponibilidade</div>
-                        </div>
+        <!-- Cabeçalho da Bicicleta -->
+        <div class="bike-header">
+            <img src="<%=bicicleta.getFoto_bike()%>" alt="<%=bicicleta.getNome_bike()%>" class="bike-image-main">
+            <div class="bike-info-main">
+                <div class="bike-title"><%=bicicleta.getNome_bike() != null ? bicicleta.getNome_bike() : "Bicicleta"%></div>
+                <div class="bike-subtitle"><%=bicicleta.getTipo_bike() != null ? bicicleta.getTipo_bike() : "Tipo não informado"%></div>
+                <div class="bike-stats">
+                    <div class="stat-item">
+                        <div class="stat-value"><%=exibirAvaliacaoMetrica(bicicleta.getAvaliacao_bike())%></div>
+                        <div class="stat-label">Avaliação</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value"><%=totalReservas%></div>
+                        <div class="stat-label">Total Reservas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value"><%=totalFeedbacks%></div>
+                        <div class="stat-label">Avaliações</div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Grid de Detalhes -->
-            <div class="details-grid">
-                <!-- Especificações -->
-                <div class="details-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-cog"></i> Especificações Técnicas
-                    </h2>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-bicycle"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Marca e Modelo</div>
-                            <div class="detail-value">Trek FX 3 Disc - Modelo 2024</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-palette"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Cor</div>
-                            <div class="detail-value">Azul Metalizado</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-arrows-alt-v"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Tamanho do Quadro</div>
-                            <div class="detail-value">Médio (17") - Altura 1,65m - 1,80m</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-weight-hanging"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Peso</div>
-                            <div class="detail-value">12,8 kg</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-cogs"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Câmbio</div>
-                            <div class="detail-value">Shimano Altus 8 velocidades</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-circle"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Freios</div>
-                            <div class="detail-value">Freios a disco hidráulicos</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-road"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Pneus</div>
-                            <div class="detail-value">700x35c - Ideais para asfalto e trilhas leves</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Informações do Locador -->
-                <div class="details-section">
-                    <h2 class="section-title">
-                        <i class="fas fa-user"></i> Informações do Locador
-                    </h2>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Proprietário</div>
-                            <div class="detail-value">Carlos Roberto Silva</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-map-marker-alt"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Localização</div>
-                            <div class="detail-value">Vila Madalena, São Paulo - SP</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Avaliação do Locador</div>
-                            <div class="detail-value">4.9/5.0 (156 avaliações)</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Tempo de Resposta</div>
-                            <div class="detail-value">Geralmente responde em 2 horas</div>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-item">
-                        <div class="detail-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="detail-content">
-                            <div class="detail-label">Verificação</div>
-                            <div class="detail-value">Perfil verificado ✓</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Calendário de Disponibilidade -->
-            <div class="availability-calendar">
+        </div>
+        
+        <!-- Grid de Detalhes -->
+        <div class="details-grid">
+            <!-- Especificações -->
+            <div class="details-section">
                 <h2 class="section-title">
-                    <i class="fas fa-calendar-alt"></i> Disponibilidade (Próximos 30 dias)
+                    <i class="fas fa-cog"></i> Especificações Técnicas
                 </h2>
                 
-                <div class="calendar-grid">
-                    <!-- Cabeçalhos dos dias -->
-                    <div class="calendar-day header">Dom</div>
-                    <div class="calendar-day header">Seg</div>
-                    <div class="calendar-day header">Ter</div>
-                    <div class="calendar-day header">Qua</div>
-                    <div class="calendar-day header">Qui</div>
-                    <div class="calendar-day header">Sex</div>
-                    <div class="calendar-day header">Sáb</div>
-                    
-                    <!-- Dias do mês (exemplo) -->
-                    <div class="calendar-day available">8</div>
-                    <div class="calendar-day available">9</div>
-                    <div class="calendar-day available">10</div>
-                    <div class="calendar-day reserved">11</div>
-                    <div class="calendar-day reserved">12</div>
-                    <div class="calendar-day available">13</div>
-                    <div class="calendar-day available">14</div>
-                    <div class="calendar-day available">15</div>
-                    <div class="calendar-day available">16</div>
-                    <div class="calendar-day unavailable">17</div>
-                    <div class="calendar-day unavailable">18</div>
-                    <div class="calendar-day available">19</div>
-                    <div class="calendar-day available">20</div>
-                    <div class="calendar-day available">21</div>
-                    <div class="calendar-day available">22</div>
-                    <div class="calendar-day reserved">23</div>
-                    <div class="calendar-day reserved">24</div>
-                    <div class="calendar-day available">25</div>
-                    <div class="calendar-day available">26</div>
-                    <div class="calendar-day available">27</div>
-                    <div class="calendar-day available">28</div>
-                    <div class="calendar-day available">29</div>
-                    <div class="calendar-day available">30</div>
-                    <div class="calendar-day available">31</div>
-                    <div class="calendar-day available">1</div>
-                    <div class="calendar-day available">2</div>
-                    <div class="calendar-day available">3</div>
-                    <div class="calendar-day available">4</div>
-                    <div class="calendar-day available">5</div>
-                    <div class="calendar-day available">6</div>
-                    <div class="calendar-day available">7</div>
+                <div class="detail-item">
+                    <div class="detail-icon">
+                        <i class="fas fa-bicycle"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Tipo de Bicicleta</div>
+                        <div class="detail-value"><%=bicicleta.getTipo_bike() != null ? bicicleta.getTipo_bike() : "Não informado"%></div>
+                    </div>
                 </div>
                 
-                <div class="calendar-legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #d4edda;"></div>
-                        <span>Disponível</span>
+                <div class="detail-item">
+                    <div class="detail-icon">
+                        <i class="fas fa-cogs"></i>
                     </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #f8d7da;"></div>
-                        <span>Indisponível</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #fff3cd;"></div>
-                        <span>Reservado</span>
+                    <div class="detail-content">
+                        <div class="detail-label">Estado de Conservação</div>
+                        <div class="detail-value"><%=bicicleta.getEstadoConserv_bike() != null ? bicicleta.getEstadoConserv_bike() : "Não informado"%></div>
                     </div>
                 </div>
+                
+                <div class="detail-item">
+                    <div class="detail-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Local de Entrega</div>
+                        <div class="detail-value"><%=bicicleta.getLocalEntr_bike() != null ? bicicleta.getLocalEntr_bike() : "Não informado"%></div>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Avaliação</div>
+                        <div class="detail-value"><%=exibirAvaliacaoCompleta(bicicleta.getAvaliacao_bike())%></div>
+                    </div>
+                </div>
+                
+                <% if (bicicleta.getChassi_bike() != null && !bicicleta.getChassi_bike().trim().isEmpty()) { %>
+                <div class="detail-item">
+                    <div class="detail-icon">
+                        <i class="fas fa-barcode"></i>
+                    </div>
+                    <div class="detail-content">
+                        <div class="detail-label">Chassi</div>
+                        <div class="detail-value"><%=bicicleta.getChassi_bike()%></div>
+                    </div>
+                </div>
+                <% } %>
             </div>
             
-            <!-- Seção de Avaliações -->
-            <div class="review-section">
+            <!-- Informações do Proprietário -->
+            <div class="owner-card" onclick="location.href='<%=request.getContextPath()%>/UsuarioController?action=exibir&cpfCnpj=<%=proprietario != null ? proprietario.getCpfCnpj_user() : ""%>&origem=bicicletaDetalhesLocatario&bicicletaId=<%=bicicleta.getId_bike()%>'">
                 <h2 class="section-title">
-                    <i class="fas fa-star"></i> Avaliações dos Locatários
+                    <i class="fas fa-user"></i> Proprietário
                 </h2>
                 
-                <div class="review-item">
-                    <div class="review-avatar">MS</div>
-                    <div class="review-content">
-                        <div class="review-header">
-                            <span class="review-author">Maria Santos</span>
-                            <div class="review-rating">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                        <div class="review-date">Há 3 dias</div>
-                        <div class="review-text">
-                            "Bicicleta excelente! Muito bem conservada e o Carlos foi super atencioso. A bike é perfeita para pedalar pela cidade, muito confortável e segura. Recomendo!"
-                        </div>
-                    </div>
+                <% if (proprietario != null) { %>
+                <div class="owner-avatar">
+                    <%=proprietario.getNomeRazaoSocial_user().substring(0, 1).toUpperCase()%>
                 </div>
-                
-                <div class="review-item">
-                    <div class="review-avatar">JS</div>
-                    <div class="review-content">
-                        <div class="review-header">
-                            <span class="review-author">João Silva</span>
-                            <div class="review-rating">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                        </div>
-                        <div class="review-date">Há 1 semana</div>
-                        <div class="review-text">
-                            "Ótima experiência! A bicicleta estava em perfeito estado, bem ajustada e limpa. O processo de retirada foi muito fácil e o proprietário foi muito prestativo."
-                        </div>
-                    </div>
+                <h3><%=proprietario.getNomeRazaoSocial_user()%></h3>
+                <p><%=proprietario.getCidade_user()%>, <%=proprietario.getEstado_user()%></p>
+                <p>📞 <%=proprietario.getTelefone_user()%></p>
+                <% if (proprietario.getAvaliacao_user() != null) { %>
+                <div class="review-rating">
+                    <%=exibirAvaliacaoCompleta(proprietario.getAvaliacao_user())%>
                 </div>
-                
-                <div class="review-item">
-                    <div class="review-avatar">PC</div>
-                    <div class="review-content">
-                        <div class="review-header">
-                            <span class="review-author">Pedro Costa</span>
-                            <div class="review-rating">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="far fa-star"></i>
-                            </div>
-                        </div>
-                        <div class="review-date">Há 2 semanas</div>
-                        <div class="review-text">
-                            "Muito boa a bicicleta, apenas os freios poderiam estar um pouco mais ajustados. No geral, uma ótima opção para quem quer pedalar pela cidade."
-                        </div>
-                    </div>
-                </div>
+                <% } %>
+                <p><small>Clique para ver perfil</small></p>
+                <% } else { %>
+                <p>Informações do proprietário não disponíveis</p>
+                <% } %>
             </div>
+        </div>
+        
+        <!-- Disponibilidades -->
+        <div class="availability-section">
+            <h2 class="section-title">
+                <i class="fas fa-calendar-alt"></i> Disponibilidade
+            </h2>
             
-            <!-- Botões de Ação -->
-            <div class="action-buttons">
-                <a href="<%=request.getContextPath()%>/pages/fazerReserva.jsp" class="btn-primary">
-                    <i class="fas fa-calendar-plus"></i> Fazer Reserva
-                </a>
-                <a href="<%=request.getContextPath()%>/pages/bicicletasLocatario.jsp" class="btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar à Busca
-                </a>
-            </div>
+            <% if (disponibilidadesBicicleta != null && !disponibilidadesBicicleta.isEmpty()) { %>
+                <% for (Disponibilidade disp : disponibilidadesBicicleta) { %>
+                <div class="availability-item">
+                    <div class="availability-dates">
+                        <strong><%=disp.getDataHoraIn_disp().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))%></strong>
+                        até
+                        <strong><%=disp.getDataHoraFim_disp().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))%></strong>
+                    </div>
+                    <div class="availability-status <%=disp.isDisponivel_disp() ? "status-disponivel" : "status-indisponivel"%>">
+                        <%=disp.isDisponivel_disp() ? "Disponível" : "Indisponível"%>
+                    </div>
+                    <% if (disp.isDisponivel_disp()) { %>
+                    <a href="<%=request.getContextPath()%>/BicicletaController?action=fazer-reserva&id=<%=bicicleta.getId_bike()%>&disponibilidadeId=<%=disp.getId_disp()%>" class="btn">
+                        <i class="fas fa-calendar-plus"></i> Fazer Reserva
+                    </a>
+                    <% } %>
+                </div>
+                <% } %>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <p>Nenhuma disponibilidade cadastrada para esta bicicleta.</p>
+                </div>
+            <% } %>
+        </div>
+        
+        <!-- Seção de Avaliações -->
+        <div class="review-section">
+            <h2 class="section-title">
+                <i class="fas fa-star"></i> Avaliações dos Locatários
+            </h2>
+            
+            <% if (feedbacksBicicleta != null && !feedbacksBicicleta.isEmpty()) { %>
+                <% for (Feedback feedback : feedbacksBicicleta) { %>
+                <div class="review-item">
+                    <div class="review-avatar">
+                        <%=feedback.getAvaliador_Usuario() != null && feedback.getAvaliador_Usuario().getNomeRazaoSocial_user() != null ? 
+                           feedback.getAvaliador_Usuario().getNomeRazaoSocial_user().substring(0, 1).toUpperCase() : "U"%>
+                    </div>
+                    <div class="review-content">
+                        <div class="review-header">
+                            <div class="review-author">
+                                <%=feedback.getAvaliador_Usuario() != null && feedback.getAvaliador_Usuario().getNomeRazaoSocial_user() != null ? 
+                                   feedback.getAvaliador_Usuario().getNomeRazaoSocial_user() : "Usuário Anônimo"%>
+                            </div>
+                            <div class="review-rating">
+                                <%=exibirAvaliacaoCompletaInt(feedback.getAvaliacaoBike_feedb())%>
+                            </div>
+                        </div>
+                        <div class="review-date">
+                            <%=feedback.getData_feedb().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))%>
+                        </div>
+                        <% if (feedback.getObsBike_feedb() != null && !feedback.getObsBike_feedb().trim().isEmpty()) { %>
+                        <div class="review-text">
+                            "<%=feedback.getObsBike_feedb()%>"
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <p>Ainda não há avaliações para esta bicicleta.</p>
+                </div>
+            <% } %>
+        </div>
+        
+        <!-- Botões de Ação -->
+        <div class="action-buttons">
+            <a href="<%=request.getContextPath()%>/BicicletaController?action=lista-locatario" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar à Busca
+            </a>
         </div>
     </div>
     
     <footer>
         <p>&copy; 2025 ShareBike. Todos os direitos reservados.</p>
     </footer>
-    
-    <script>
-        // Interatividade do calendário
-        document.querySelectorAll('.calendar-day.available').forEach(day => {
-            day.addEventListener('click', function() {
-                // Remove seleção anterior
-                document.querySelectorAll('.calendar-day.selected').forEach(selected => {
-                    selected.classList.remove('selected');
-                });
-                
-                // Adiciona seleção atual
-                this.classList.add('selected');
-                this.style.background = '#007bff';
-                this.style.color = 'white';
-                
-                console.log('Data selecionada:', this.textContent);
-            });
-        });
-        
-        // Animações de entrada
-        document.addEventListener('DOMContentLoaded', function() {
-            const elements = document.querySelectorAll('.details-section, .availability-calendar, .review-section');
-            elements.forEach((element, index) => {
-                element.style.opacity = '0';
-                element.style.transform = 'translateY(30px)';
-                
-                setTimeout(() => {
-                    element.style.transition = 'all 0.6s ease';
-                    element.style.opacity = '1';
-                    element.style.transform = 'translateY(0)';
-                }, index * 200);
-            });
-        });
-    </script>
 </body>
 </html>
+
+<%!
+// Função auxiliar para exibir valor de avaliação em métricas
+String exibirAvaliacaoMetrica(Float avaliacao) {
+    if (avaliacao == null || avaliacao == 0.0f) {
+        return "Sem Avaliação";
+    }
+    return String.format("%.1f", avaliacao);
+}
+%>

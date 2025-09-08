@@ -1,5 +1,110 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Reserva" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+<%@ page import="br.com.sharebike.model.Bicicleta" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="java.time.temporal.ChronoUnit" %>
+<%!
+// Função para formatação de datas
+String formatarData(LocalDateTime data) {
+    if (data == null) return "N/A";
+    return data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+}
+
+// Função para formatação de data simples
+String formatarDataSimples(LocalDateTime data) {
+    if (data == null) return "N/A";
+    return data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+}
+
+// Função para formatação de hora
+String formatarHora(LocalDateTime data) {
+    if (data == null) return "N/A";
+    return data.format(DateTimeFormatter.ofPattern("HH:mm"));
+}
+
+// Função para calcular duração em horas
+long calcularDuracaoHoras(LocalDateTime inicio, LocalDateTime fim) {
+    if (inicio == null || fim == null) return 0;
+    return ChronoUnit.HOURS.between(inicio, fim);
+}
+
+// Função para traduzir status
+String traduzirStatus(String status) {
+    if (status == null) return "Indefinido";
+    switch (status.toUpperCase()) {
+        case "PENDENTE": return "Aguardando Aprovação";
+        case "CONFIRMADA": return "Confirmada";
+        case "NEGADA": return "Negada";
+        case "EM ANDAMENTO": return "Em Andamento";
+        case "FINALIZADA": return "Finalizada";
+        default: return status;
+    }
+}
+
+// Função para obter classe CSS do status
+String obterClasseStatus(String status) {
+    if (status == null) return "status-pendente";
+    switch (status.toUpperCase()) {
+        case "PENDENTE": return "status-pendente";
+        case "CONFIRMADA": return "status-confirmada";
+        case "NEGADA": return "status-cancelada";
+        case "EM ANDAMENTO": return "status-em-andamento";
+        case "FINALIZADA": return "status-finalizada";
+        default: return "status-pendente";
+    }
+}
+
+// Verificar se está no tempo permitido para entrega (10 minutos antes do check-in)
+boolean podeConfirmarEntrega(LocalDateTime checkIn) {
+    if (checkIn == null) return false;
+    LocalDateTime agora = LocalDateTime.now();
+    LocalDateTime limiteEntrega = checkIn.minusMinutes(10);
+    return agora.isAfter(limiteEntrega) || agora.isEqual(limiteEntrega);
+}
+
+// Verificar se está no tempo permitido para devolução (10 minutos antes do check-out)
+boolean podeConfirmarDevolucao(LocalDateTime checkOut) {
+    if (checkOut == null) return false;
+    LocalDateTime agora = LocalDateTime.now();
+    LocalDateTime limiteDevolucao = checkOut.minusMinutes(10);
+    return agora.isAfter(limiteDevolucao) || agora.isEqual(limiteDevolucao);
+}
+%>
+<%
+// Verificar se usuário está logado
+Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+if (usuarioLogado == null) {
+    response.sendRedirect(request.getContextPath() + "/pages/loginUsuario.jsp");
+    return;
+}
+
+// Obter ID da reserva dos parâmetros
+String idParam = request.getParameter("id");
+if (idParam == null) {
+    response.sendRedirect(request.getContextPath() + "/ReservaController?action=listar-minhas-reservas-locador");
+    return;
+}
+
+// Buscar dados da reserva (devem vir do controller)
+Reserva reserva = (Reserva) request.getAttribute("reserva");
+if (reserva == null) {
+    // Se não há dados no request, redirecionar para buscar
+    response.sendRedirect(request.getContextPath() + "/ReservaController?action=exibir&id=" + idParam);
+    return;
+}
+
+// Dados da reserva
+Usuario locatario = reserva.getUsuario();
+Bicicleta bicicleta = reserva.getBicicleta();
+String status = reserva.getStatus_reserv() != null ? reserva.getStatus_reserv() : "PENDENTE";
+
+// Cálculos de tempo
+long duracaoHoras = calcularDuracaoHoras(reserva.getDataCheckIn_reserv(), reserva.getDataCheckOut_reserv());
+LocalDateTime agora = LocalDateTime.now();
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -29,7 +134,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            background: linear-gradient(135deg, #38b2ac 0%, #0d9488 50%, #047857 100%);
             color: white;
             padding: 2rem;
             border-radius: 15px;
@@ -369,13 +474,13 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <a href="reservasLocador.jsp" class="back-link">
+            <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas-locador" class="back-link">
                 <i class="fas fa-arrow-left"></i> Voltar às Reservas
             </a>
             
             <h1 class="header-title">
                 <i class="fas fa-cogs"></i> 
-                Gestão da Reserva #001
+                Gestão da Reserva #<%= String.format("%03d", reserva.getId_reserv()) %>
             </h1>
             <p>Gerencie e acompanhe o status da reserva da sua bicicleta</p>
         </div>
@@ -383,7 +488,7 @@
         <!-- Horário Atual -->
         <div class="current-time">
             <i class="fas fa-clock"></i> 
-            Horário Atual: <span id="currentTime">7 de agosto de 2025 - 14:30</span>
+            Horário Atual: <span id="currentTime"><%= formatarData(agora) %></span>
         </div>
 
         <!-- Status da Reserva -->
@@ -394,19 +499,45 @@
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <span class="status-badge status-em-andamento" id="statusBadge">
-                    <i class="fas fa-play"></i> Em Andamento
+                <span class="status-badge <%= obterClasseStatus(status) %>" id="statusBadge">
+                    <% if ("PENDENTE".equals(status.toUpperCase())) { %>
+                        <i class="fas fa-clock"></i> <%= traduzirStatus(status) %>
+                    <% } else if ("CONFIRMADA".equals(status.toUpperCase())) { %>
+                        <i class="fas fa-thumbs-up"></i> <%= traduzirStatus(status) %>
+                    <% } else if ("NEGADA".equals(status.toUpperCase())) { %>
+                        <i class="fas fa-times"></i> <%= traduzirStatus(status) %>
+                    <% } else if ("EM ANDAMENTO".equals(status.toUpperCase())) { %>
+                        <i class="fas fa-play"></i> <%= traduzirStatus(status) %>
+                    <% } else if ("FINALIZADA".equals(status.toUpperCase())) { %>
+                        <i class="fas fa-check-circle"></i> <%= traduzirStatus(status) %>
+                    <% } else { %>
+                        <i class="fas fa-question"></i> <%= traduzirStatus(status) %>
+                    <% } %>
                 </span>
                 
                 <div style="text-align: right;">
                     <div class="info-label">Reserva criada em</div>
-                    <div class="info-value">1 de agosto de 2025</div>
+                    <div class="info-value"><%= formatarDataSimples(reserva.getDataCheckIn_reserv()) %></div>
                 </div>
             </div>
 
             <div class="alert alert-info" id="statusAlert" style="margin-top: 1rem;">
-                <i class="fas fa-bicycle"></i>
-                <span>Bicicleta foi entregue. Aguardando o horário de devolução (17:00).</span>
+                <% if ("PENDENTE".equals(status.toUpperCase())) { %>
+                    <i class="fas fa-clock"></i>
+                    <span>Nova solicitação de reserva aguardando sua aprovação.</span>
+                <% } else if ("CONFIRMADA".equals(status.toUpperCase())) { %>
+                    <i class="fas fa-check"></i>
+                    <span>Reserva confirmada. Aguarde o dia da entrega.</span>
+                <% } else if ("NEGADA".equals(status.toUpperCase())) { %>
+                    <i class="fas fa-times-circle"></i>
+                    <span>Reserva foi cancelada. O locatário foi notificado.</span>
+                <% } else if ("EM ANDAMENTO".equals(status.toUpperCase())) { %>
+                    <i class="fas fa-bicycle"></i>
+                    <span>Bicicleta foi entregue. Aguardando o horário de devolução (<%= formatarHora(reserva.getDataCheckOut_reserv()) %>).</span>
+                <% } else if ("FINALIZADA".equals(status.toUpperCase())) { %>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Reserva finalizada com sucesso! Você pode avaliar o locatário.</span>
+                <% } %>
             </div>
         </div>
 
@@ -420,42 +551,42 @@
             <div class="info-grid">
                 <div class="info-item">
                     <span class="info-label">ID da Reserva</span>
-                    <span class="info-value">#001</span>
+                    <span class="info-value">#<%= String.format("%03d", reserva.getId_reserv()) %></span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Data de Início</span>
-                    <span class="info-value">5 de agosto de 2025</span>
+                    <span class="info-value"><%= formatarDataSimples(reserva.getDataCheckIn_reserv()) %></span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Horário de Início</span>
-                    <span class="info-value">09:00</span>
+                    <span class="info-value"><%= formatarHora(reserva.getDataCheckIn_reserv()) %></span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Data de Fim</span>
-                    <span class="info-value">5 de agosto de 2025</span>
+                    <span class="info-value"><%= formatarDataSimples(reserva.getDataCheckOut_reserv()) %></span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Horário de Fim</span>
-                    <span class="info-value">17:00</span>
+                    <span class="info-value"><%= formatarHora(reserva.getDataCheckOut_reserv()) %></span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Duração Total</span>
-                    <span class="info-value">8 horas</span>
+                    <span class="info-value"><%= duracaoHoras %> horas</span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Local de Retirada</span>
-                    <span class="info-value">Rua das Flores, 123 - Centro</span>
+                    <span class="info-value"><%= bicicleta != null ? bicicleta.getLocalEntr_bike() : "Não informado" %></span>
                 </div>
                 
                 <div class="info-item">
                     <span class="info-label">Status</span>
-                    <span class="info-value">Confirmada</span>
+                    <span class="info-value"><%= traduzirStatus(status) %></span>
                 </div>
             </div>
         </div>
@@ -472,12 +603,17 @@
                     <i class="fas fa-bicycle"></i>
                 </div>
                 <div class="locatario-info">
-                    <h3>Trek Mountain Pro 2024</h3>
+                    <h3><%= bicicleta != null ? bicicleta.getNome_bike() : "Bicicleta não informada" %></h3>
                     <div class="locatario-details">
-                        <i class="fas fa-mountain"></i> Mountain Bike<br>
-                        <i class="fas fa-star"></i> 4.8/5.0 (25 avaliações)<br>
-                        <i class="fas fa-cogs"></i> 21 marchas - Aro 29<br>
-                        <i class="fas fa-shield-alt"></i> Seguro incluído
+                        <i class="fas fa-cogs"></i> <%= bicicleta != null ? bicicleta.getTipo_bike() : "Tipo não informado" %><br>
+                        <i class="fas fa-wrench"></i> <%= bicicleta != null ? bicicleta.getEstadoConserv_bike() : "Estado não informado" %><br>
+                        <i class="fas fa-map-marker-alt"></i> <%= bicicleta != null ? bicicleta.getLocalEntr_bike() : "Local não informado" %><br>
+                        <i class="fas fa-star"></i> 
+                        <% if (bicicleta != null && bicicleta.getAvaliacao_bike() != null && bicicleta.getAvaliacao_bike() > 0) { %>
+                            <%= String.format("%.1f", bicicleta.getAvaliacao_bike()) %>/5.0
+                        <% } else { %>
+                            Sem Avaliação
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -495,19 +631,22 @@
                     <i class="fas fa-user"></i>
                 </div>
                 <div class="locatario-info">
-                    <h3>João Silva</h3>
+                    <h3><%= locatario != null ? locatario.getNomeRazaoSocial_user() : "Locatário não informado" %></h3>
                     <div class="locatario-details">
-                        <i class="fas fa-star"></i> 4.2/5.0 (18 avaliações)<br>
-                        <i class="fas fa-phone"></i> (11) 99999-8888<br>
-                        <i class="fas fa-calendar"></i> Membro desde Janeiro 2023<br>
-                        <i class="fas fa-bicycle"></i> 47 aluguéis realizados
+                        <% if (locatario != null && locatario.getAvaliacao_user() != null) { %>
+                        <i class="fas fa-star"></i> <%= String.format("%.1f", locatario.getAvaliacao_user()) %>/5.0<br>
+                        <% } %>
+                        <% if (locatario != null && locatario.getTelefone_user() != null && !locatario.getTelefone_user().isEmpty()) { %>
+                        <i class="fas fa-phone"></i> <%= locatario.getTelefone_user() %><br>
+                        <% } %>
+                        <% if (locatario != null && locatario.getEmail_user() != null) { %>
+                        <i class="fas fa-envelope"></i> <%= locatario.getEmail_user() %><br>
+                        <% } %>
+                        <% if (locatario != null && locatario.getCidade_user() != null && locatario.getEstado_user() != null) { %>
+                        <i class="fas fa-map-marker-alt"></i> <%= locatario.getCidade_user() %>, <%= locatario.getEstado_user() %>
+                        <% } %>
                     </div>
                 </div>
-            </div>
-            
-            <div style="background: #e3f2fd; border-radius: 8px; padding: 1rem; margin-top: 1rem;">
-                <h4><i class="fas fa-shield-check"></i> Perfil Verificado</h4>
-                <p>Locatário confiável com histórico positivo de aluguéis.</p>
             </div>
         </div>
 
@@ -523,177 +662,152 @@
                     <div class="timeline-marker completed"></div>
                     <div class="timeline-content">
                         <h4>Solicitação de Reserva</h4>
-                        <div class="timeline-date">1 de agosto de 2025 - 14:30</div>
+                        <div class="timeline-date"><%= formatarData(reserva.getDataCheckIn_reserv()) %> (estimativa)</div>
                     </div>
                 </div>
                 
+                <% if (!"PENDENTE".equals(status.toUpperCase())) { %>
                 <div class="timeline-item">
                     <div class="timeline-marker completed"></div>
                     <div class="timeline-content">
-                        <h4>Reserva Confirmada por Você</h4>
-                        <div class="timeline-date">2 de agosto de 2025 - 09:15</div>
+                        <h4>
+                            <% if ("NEGADA".equals(status.toUpperCase())) { %>
+                                Reserva Negada por Você
+                            <% } else { %>
+                                Reserva Confirmada por Você
+                            <% } %>
+                        </h4>
                     </div>
                 </div>
+                <% } %>
                 
+                <% if ("EM ANDAMENTO".equals(status.toUpperCase()) || "FINALIZADA".equals(status.toUpperCase())) { %>
                 <div class="timeline-item">
                     <div class="timeline-marker completed"></div>
                     <div class="timeline-content">
                         <h4>Bicicleta Entregue</h4>
-                        <div class="timeline-date">5 de agosto de 2025 - 09:00</div>
+                        <div class="timeline-date"><%= formatarData(reserva.getDataCheckIn_reserv()) %></div>
                     </div>
                 </div>
+                <% } %>
                 
+                <% if ("FINALIZADA".equals(status.toUpperCase())) { %>
+                <div class="timeline-item">
+                    <div class="timeline-marker completed"></div>
+                    <div class="timeline-content">
+                        <h4>Bicicleta Devolvida</h4>
+                        <div class="timeline-date"><%= formatarData(reserva.getDataCheckOut_reserv()) %></div>
+                    </div>
+                </div>
+                <% } else if ("EM ANDAMENTO".equals(status.toUpperCase())) { %>
                 <div class="timeline-item">
                     <div class="timeline-marker pending"></div>
                     <div class="timeline-content">
                         <h4>Aguardando Devolução</h4>
-                        <div class="timeline-date">Previsto: 5 de agosto de 2025 - 17:00</div>
+                        <div class="timeline-date">Previsto: <%= formatarData(reserva.getDataCheckOut_reserv()) %></div>
                     </div>
                 </div>
+                <% } %>
             </div>
         </div>
 
         <!-- Botões de Ação -->
         <div class="action-buttons" id="actionButtons">
-            <!-- Botões que aparecem baseado no status -->
-            <button class="btn btn-success" onclick="marcarComoDevolvida()" id="btnDevolvida">
-                <i class="fas fa-check"></i>
-                Marcar como Devolvida
-            </button>
-            
-            <button class="btn btn-warning" onclick="reportarAtraso()" id="btnAtraso">
-                <i class="fas fa-exclamation-triangle"></i>
-                Reportar Atraso
-            </button>
-            
-            <a href="reservasLocador.jsp" class="btn btn-secondary">
+            <!-- Botão sempre presente - Voltar -->
+            <a href="<%=request.getContextPath()%>/ReservaController?action=listar-minhas-reservas-locador" class="btn btn-secondary">
                 <i class="fas fa-list"></i>
                 Ver Todas as Reservas
             </a>
+            
+            <% if ("PENDENTE".equals(status.toUpperCase())) { %>
+                <!-- Botões para status PENDENTE -->
+                <form action="<%=request.getContextPath()%>/ReservaController" method="post" style="display: inline;">
+                    <input type="hidden" name="action" value="editar">
+                    <input type="hidden" name="id_reserv" value="<%= reserva.getId_reserv() %>">
+                    <input type="hidden" name="status_reserv" value="CONFIRMADA">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Confirmar esta reserva?')">
+                        <i class="fas fa-check"></i>
+                        Confirmar Reserva
+                    </button>
+                </form>
+                
+                <form action="<%=request.getContextPath()%>/ReservaController" method="post" style="display: inline;">
+                    <input type="hidden" name="action" value="editar">
+                    <input type="hidden" name="id_reserv" value="<%= reserva.getId_reserv() %>">
+                    <input type="hidden" name="status_reserv" value="NEGADA">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja negar esta reserva?\n\nO locatário será avisado sobre a negação.')">
+                        <i class="fas fa-times"></i>
+                        Negar Reserva
+                    </button>
+                </form>
+                
+            <% } else if ("CONFIRMADA".equals(status.toUpperCase())) { %>
+                <!-- Botões para status CONFIRMADA -->
+                <% if (podeConfirmarEntrega(reserva.getDataCheckIn_reserv())) { %>
+                <form action="<%=request.getContextPath()%>/ReservaController" method="post" style="display: inline;">
+                    <input type="hidden" name="action" value="editar">
+                    <input type="hidden" name="id_reserv" value="<%= reserva.getId_reserv() %>">
+                    <input type="hidden" name="status_reserv" value="EM ANDAMENTO">
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmar que a bicicleta foi entregue ao locatário?')">
+                        <i class="fas fa-handshake"></i>
+                        Confirmar Entrega
+                    </button>
+                </form>
+                <% } else { %>
+                <div class="alert alert-info">
+                    <i class="fas fa-clock"></i>
+                    <span>O botão de confirmar entrega estará disponível a partir de 10 minutos antes do horário de check-in (<%= formatarHora(reserva.getDataCheckIn_reserv().minusMinutes(10)) %>).</span>
+                </div>
+                <% } %>
+                
+                <!-- Botão para cancelar reserva confirmada -->
+                <form action="<%=request.getContextPath()%>/ReservaController" method="post" style="display: inline;">
+                    <input type="hidden" name="action" value="editar">
+                    <input type="hidden" name="id_reserv" value="<%= reserva.getId_reserv() %>">
+                    <input type="hidden" name="status_reserv" value="NEGADA">
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Tem certeza que deseja cancelar esta reserva confirmada?\n\nO locatário será avisado sobre o cancelamento.')">>
+                        <i class="fas fa-ban"></i>
+                        Cancelar Reserva
+                    </button>
+                </form>
+                
+            <% } else if ("EM ANDAMENTO".equals(status.toUpperCase())) { %>
+                <!-- Botão para status EM ANDAMENTO - só aparece 10 min antes do check-out -->
+                <% if (podeConfirmarDevolucao(reserva.getDataCheckOut_reserv())) { %>
+                <form action="<%=request.getContextPath()%>/ReservaController" method="post" style="display: inline;">
+                    <input type="hidden" name="action" value="editar">
+                    <input type="hidden" name="id_reserv" value="<%= reserva.getId_reserv() %>">
+                    <input type="hidden" name="status_reserv" value="FINALIZADA">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Confirmar que a bicicleta foi devolvida?')">
+                        <i class="fas fa-check"></i>
+                        Confirmar Devolução
+                    </button>
+                </form>
+                <% } else { %>
+                <div class="alert alert-info">
+                    <i class="fas fa-clock"></i>
+                    <span>O botão de confirmar devolução estará disponível a partir de 10 minutos antes do horário de check-out (<%= formatarHora(reserva.getDataCheckOut_reserv().minusMinutes(10)) %>).</span>
+                </div>
+                <% } %>
+                
+            <% } else if ("FINALIZADA".equals(status.toUpperCase())) { %>
+                <!-- Botão para status FINALIZADA -->
+                <a href="<%=request.getContextPath()%>/FeedbackController?action=fazer-avaliacao-locador&reservaId=<%= reserva.getId_reserv() %>" class="btn btn-success">
+                    <i class="fas fa-star"></i>
+                    Avaliar Locatário
+                </a>
+                
+            <% } else if ("NEGADA".equals(status.toUpperCase())) { %>
+                <!-- Para status NEGADA - apenas botão de voltar já está presente -->
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Esta reserva foi cancelada. O locatário foi notificado automaticamente.</span>
+                </div>
+            <% } %>
         </div>
     </div>
 
     <script>
-        // Simular diferentes status da reserva
-        function atualizarInterface(status) {
-            const statusBadge = document.getElementById('statusBadge');
-            const statusAlert = document.getElementById('statusAlert');
-            const actionButtons = document.getElementById('actionButtons');
-            
-            // Limpar botões anteriores
-            const botoesAntigos = actionButtons.querySelectorAll('.btn:not([href])');
-            botoesAntigos.forEach(btn => btn.remove());
-            
-            switch(status) {
-                case 'pendente':
-                    statusBadge.className = 'status-badge status-pendente';
-                    statusBadge.innerHTML = '<i class="fas fa-clock"></i> Pendente';
-                    statusAlert.innerHTML = '<i class="fas fa-clock"></i><span>Nova solicitação de reserva aguardando sua aprovação.</span>';
-                    statusAlert.className = 'alert alert-warning';
-                    
-                    // Adicionar botões de aceitar/rejeitar
-                    actionButtons.insertAdjacentHTML('afterbegin', `
-                        <button class="btn btn-success" onclick="confirmarReserva()">
-                            <i class="fas fa-check"></i> Confirmar Reserva
-                        </button>
-                        <button class="btn btn-danger" onclick="negarReserva()">
-                            <i class="fas fa-times"></i> Negar Reserva
-                        </button>
-                    `);
-                    break;
-                    
-                case 'confirmada':
-                    statusBadge.className = 'status-badge status-confirmada';
-                    statusBadge.innerHTML = '<i class="fas fa-thumbs-up"></i> Confirmada';
-                    statusAlert.innerHTML = '<i class="fas fa-check"></i><span>Reserva confirmada. Aguarde o dia da retirada.</span>';
-                    statusAlert.className = 'alert alert-success';
-                    break;
-                    
-                case 'dia-da-entrega':
-                    statusBadge.className = 'status-badge status-confirmada';
-                    statusBadge.innerHTML = '<i class="fas fa-calendar-day"></i> Dia da Entrega';
-                    statusAlert.innerHTML = '<i class="fas fa-info-circle"></i><span>Hoje é o dia da entrega! Confirme quando entregar a bicicleta.</span>';
-                    statusAlert.className = 'alert alert-info';
-                    
-                    // Adicionar botão de entregar
-                    actionButtons.insertAdjacentHTML('afterbegin', `
-                        <button class="btn btn-primary" onclick="marcarComoEntregue()">
-                            <i class="fas fa-handshake"></i> Marcar como Entregue
-                        </button>
-                    `);
-                    break;
-                    
-                case 'em-andamento':
-                    statusBadge.className = 'status-badge status-em-andamento';
-                    statusBadge.innerHTML = '<i class="fas fa-play"></i> Em Andamento';
-                    statusAlert.innerHTML = '<i class="fas fa-bicycle"></i><span>Bicicleta foi entregue. Aguardando o horário de devolução (17:00).</span>';
-                    statusAlert.className = 'alert alert-info';
-                    
-                    // Verificar se é hora da devolução
-                    const agora = new Date();
-                    const horaDevolucao = new Date();
-                    horaDevolucao.setHours(17, 0, 0);
-                    
-                    if (agora >= horaDevolucao) {
-                        actionButtons.insertAdjacentHTML('afterbegin', `
-                            <button class="btn btn-success" onclick="marcarComoDevolvida()">
-                                <i class="fas fa-check"></i> Marcar como Devolvida
-                            </button>
-                            <button class="btn btn-warning" onclick="reportarAtraso()">
-                                <i class="fas fa-exclamation-triangle"></i> Reportar Atraso
-                            </button>
-                        `);
-                    }
-                    break;
-                    
-                case 'finalizada':
-                    statusBadge.className = 'status-badge status-finalizada';
-                    statusBadge.innerHTML = '<i class="fas fa-check-circle"></i> Finalizada';
-                    statusAlert.innerHTML = '<i class="fas fa-check-circle"></i><span>Reserva finalizada com sucesso! Você pode avaliar o locatário.</span>';
-                    statusAlert.className = 'alert alert-success';
-                    
-                    // Adicionar botão de feedback
-                    actionButtons.insertAdjacentHTML('afterbegin', `
-                        <a href="fazerFeedbackLocador.jsp?reservaId=001" class="btn btn-success">
-                            <i class="fas fa-star"></i> Avaliar Locatário
-                        </a>
-                    `);
-                    break;
-            }
-        }
-        
-        function confirmarReserva() {
-            if (confirm('Confirmar esta reserva?')) {
-                alert('Reserva confirmada com sucesso!');
-                atualizarInterface('confirmada');
-            }
-        }
-        
-        function negarReserva() {
-            if (confirm('Tem certeza que deseja negar esta reserva?')) {
-                alert('Reserva negada. O locatário será notificado.');
-                window.location.href = 'reservasLocador.jsp';
-            }
-        }
-        
-        function marcarComoEntregue() {
-            if (confirm('Confirmar que a bicicleta foi entregue ao locatário?')) {
-                alert('Bicicleta marcada como entregue!');
-                atualizarInterface('em-andamento');
-            }
-        }
-        
-        function marcarComoDevolvida() {
-            if (confirm('Confirmar que a bicicleta foi devolvida?')) {
-                alert('Bicicleta devolvida! Redirecionando para avaliação...');
-                window.location.href = 'fazerFeedbackLocador.jsp?reservaId=001';
-            }
-        }
-        
-        function reportarAtraso() {
-            alert('Atraso reportado. O locatário será notificado e taxas adicionais podem ser aplicadas.');
-        }
-        
         // Atualizar horário atual
         function atualizarHorario() {
             const agora = new Date();
@@ -708,11 +822,12 @@
         }
         
         // Inicializar página
-        atualizarInterface('em-andamento');
         atualizarHorario();
         setInterval(atualizarHorario, 60000); // Atualizar a cada minuto
         
-        console.log('Página de gestão da reserva (locador) carregada');
+        console.log('Página de gestão da reserva (locador) carregada - Dados dinâmicos');
+        console.log('Status da reserva: <%= status %>');
+        console.log('ID da reserva: <%= reserva.getId_reserv() %>');
     </script>
 </body>
 </html>

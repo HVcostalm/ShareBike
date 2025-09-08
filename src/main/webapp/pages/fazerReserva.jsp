@@ -1,11 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page session="true" %>
+<%@ page import="br.com.sharebike.model.Bicicleta" %>
+<%@ page import="br.com.sharebike.model.Usuario" %>
+<%@ page import="br.com.sharebike.model.Disponibilidade" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>Fazer Reserva - ShareBike</title>
-    <link rel="stylesheet" href="../assets/css/bicicletas.css">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/bicicletas.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .reservation-form {
@@ -143,180 +148,118 @@
     </style>
 </head>
 <body>
+    <%
+        // Obter dados enviados pelo controller
+        Bicicleta bicicleta = (Bicicleta) request.getAttribute("bicicleta");
+        Usuario proprietario = (Usuario) request.getAttribute("proprietario");
+        List<Disponibilidade> disponibilidades = (List<Disponibilidade>) request.getAttribute("disponibilidades");
+        Disponibilidade disponibilidadeSelecionada = (Disponibilidade) request.getAttribute("disponibilidadeSelecionada");
+        
+        // Verificar se há dados
+        if (bicicleta == null) {
+            response.sendRedirect(request.getContextPath() + "/BicicletaController?action=lista-locatario");
+            return;
+        }
+        
+        // Obter usuário logado
+        Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+        if (usuarioLogado == null) {
+            response.sendRedirect(request.getContextPath() + "/pages/loginUsuario.jsp");
+            return;
+        }
+    %>
+    
     <header>
-        <h1><i class="fas fa-calendar-plus"></i> Fazer Nova Reserva</h1>
+        <h1><i class="fas fa-calendar-plus"></i> Fazer Reserva</h1>
     </header>
     
     <div class="container">
         <nav class="nav">
-            <a href="bicicletasLocatario.jsp"><i class="fas fa-search"></i> Buscar Bicicletas</a>
-            <a href="reservasLocatario.jsp"><i class="fas fa-calendar-check"></i> Minhas Reservas</a>
-            <a href="fazerReserva.jsp"><i class="fas fa-calendar-plus"></i> Nova Reserva</a>
-            <a href="rankingLocatario.jsp"><i class="fas fa-trophy"></i> Ranking</a>
+            <a href="<%=request.getContextPath()%>/BicicletaController?action=exibir-locatario&id=<%=bicicleta.getId_bike()%>"><i class="fas fa-arrow-left"></i> Voltar para Bicicleta</a>
         </nav>
         
-        <form class="reservation-form" id="reservationForm">
-            <h3><i class="fas fa-bicycle"></i> Escolha uma Bicicleta</h3>
+        <form class="reservation-form" id="reservationForm" action="<%=request.getContextPath()%>/ReservaController" method="post">
+            <input type="hidden" name="action" value="adicionar">
+            <input type="hidden" name="cpfCnpj" value="<%=usuarioLogado.getCpfCnpj_user()%>">
+            <input type="hidden" name="id_bike" value="<%=bicicleta.getId_bike()%>">
             
-            <!-- Seleção de Bicicletas -->
-            <div style="display: grid; gap: 1rem; margin-bottom: 2rem;">
-                <div class="bike-selection" onclick="selectBike(this, 'bike1')">
-                    <div class="bike-option">
-                        <input type="radio" name="selectedBike" value="bike1" id="bike1">
-                        <img src="../assets/images/rent1.jpg" alt="Mountain Explorer" class="bike-preview-image" onerror="this.src='https://via.placeholder.com/80x60/38b2ac/ffffff?text=B1'">
-                        <div class="bike-info">
-                            <strong>Mountain Explorer MX-2024</strong><br>
-                            <span>Mountain - Vila Madalena, SP</span><br>
-                            <span style="color: #38b2ac; font-weight: bold;">Disponível</span>
-                            <span style="float: right;">⭐ 4.5/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bike-selection" onclick="selectBike(this, 'bike2')">
-                    <div class="bike-option">
-                        <input type="radio" name="selectedBike" value="bike2" id="bike2">
-                        <img src="../assets/images/rent2.jpg" alt="Speed Urbana" class="bike-preview-image" onerror="this.src='https://via.placeholder.com/80x60/007bff/ffffff?text=B2'">
-                        <div class="bike-info">
-                            <strong>Speed Urbana SP-2024</strong><br>
-                            <span>Speed - Copacabana, RJ</span><br>
-                            <span style="color: #38b2ac; font-weight: bold;">Disponível</span>
-                            <span style="float: right;">⭐ 4.0/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bike-selection" onclick="selectBike(this, 'bike3')">
-                    <div class="bike-option">
-                        <input type="radio" name="selectedBike" value="bike3" id="bike3">
-                        <img src="../assets/images/rent3.jpg" alt="Urbana City" class="bike-preview-image" onerror="this.src='https://via.placeholder.com/80x60/28a745/ffffff?text=B3'">
-                        <div class="bike-info">
-                            <strong>Urbana City UB-2024</strong><br>
-                            <span>Urbana - Savassi, BH</span><br>
-                            <span style="color: #38b2ac; font-weight: bold;">Disponível</span>
-                            <span style="float: right;">⭐ 5.0/5.0</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bike-selection" onclick="selectBike(this, 'bike4')">
-                    <div class="bike-option">
-                        <input type="radio" name="selectedBike" value="bike4" id="bike4">
-                        <img src="../assets/images/rent4.jpg" alt="Dobrável Compacta" class="bike-preview-image" onerror="this.src='https://via.placeholder.com/80x60/ffc107/000000?text=D'">
-                        <div class="bike-info">
-                            <strong>Dobrável Compacta DB-2024</strong><br>
-                            <span>Dobrável - Moinhos de Vento, POA</span><br>
-                            <span style="color: #38b2ac; font-weight: bold;">Disponível</span>
-                            <span style="float: right;">⭐ 4.2/5.0</span>
-                        </div>
+            <!-- Informações da Bicicleta -->
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border-left: 4px solid #28a745;">
+                <h3><i class="fas fa-bicycle"></i> Bicicleta Selecionada</h3>
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: center;">
+                    <img src="<%=bicicleta.getFoto_bike()%>" alt="<%=bicicleta.getNome_bike()%>" 
+                         style="width: 120px; height: 80px; object-fit: cover; border-radius: 8px;">
+                    <div>
+                        <h4><%=bicicleta.getNome_bike()%></h4>
+                        <p><strong>Tipo:</strong> <%=bicicleta.getTipo_bike()%></p>
+                        <p><strong>Estado:</strong> <%=bicicleta.getEstadoConserv_bike()%></p>
+                        <p><strong>Local de Entrega:</strong> <%=bicicleta.getLocalEntr_bike()%></p>
                     </div>
                 </div>
             </div>
             
-            <h3><i class="fas fa-calendar-alt"></i> Dados da Reserva</h3>
+            <!-- Informações do Proprietário -->
+            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border-left: 4px solid #17a2b8;">
+                <h3><i class="fas fa-user"></i> Proprietário</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                    <p><strong>Nome:</strong> <%=proprietario.getNomeRazaoSocial_user()%></p>
+                    <p><strong>Telefone:</strong> <%=proprietario.getTelefone_user()%></p>
+                    <p><strong>Email:</strong> <%=proprietario.getEmail_user()%></p>
+                </div>
+            </div>
+            
+            <h3><i class="fas fa-calendar-alt"></i> Período da Reserva</h3>
             
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="checkInDate">
-                        <i class="fas fa-calendar"></i> Data de Retirada
+                    <label for="dataCheckIn">
+                        <i class="fas fa-calendar"></i> Data e Hora de Retirada
                     </label>
-                    <input type="date" id="checkInDate" name="checkInDate" required onchange="calculatePrice()">
+                    <input type="datetime-local" id="dataCheckIn" name="dataCheckIn" readonly
+                           <% if (disponibilidadeSelecionada != null) { %>
+                           value="<%=disponibilidadeSelecionada.getDataHoraIn_disp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))%>"
+                           <% } %>>
                 </div>
                 
                 <div class="form-group">
-                    <label for="checkInTime">
-                        <i class="fas fa-clock"></i> Horário de Retirada
+                    <label for="dataCheckOut">
+                        <i class="fas fa-calendar"></i> Data e Hora de Devolução
                     </label>
-                    <input type="time" id="checkInTime" name="checkInTime" value="09:00" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="checkOutDate">
-                        <i class="fas fa-calendar"></i> Data de Devolução
-                    </label>
-                    <input type="date" id="checkOutDate" name="checkOutDate" required onchange="calculatePrice()">
-                </div>
-                
-                <div class="form-group">
-                    <label for="checkOutTime">
-                        <i class="fas fa-clock"></i> Horário de Devolução
-                    </label>
-                    <input type="time" id="checkOutTime" name="checkOutTime" value="18:00" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="pickupLocation">
-                        <i class="fas fa-map-marker-alt"></i> Local de Retirada
-                    </label>
-                    <input type="text" id="pickupLocation" name="pickupLocation" placeholder="Endereço para retirada" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="returnLocation">
-                        <i class="fas fa-map-marker-alt"></i> Local de Devolução
-                    </label>
-                    <input type="text" id="returnLocation" name="returnLocation" placeholder="Endereço para devolução" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="contactPhone">
-                        <i class="fas fa-phone"></i> Telefone de Contato
-                    </label>
-                    <input type="tel" id="contactPhone" name="contactPhone" placeholder="(11) 99999-9999" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="emergencyContact">
-                        <i class="fas fa-user-friends"></i> Contato de Emergência
-                    </label>
-                    <input type="tel" id="emergencyContact" name="emergencyContact" placeholder="(11) 88888-8888">
-                </div>
-                
-                <div class="form-group full-width">
-                    <label for="purpose">
-                        <i class="fas fa-question-circle"></i> Finalidade do Uso
-                    </label>
-                    <select id="purpose" name="purpose" required>
-                        <option value="">Selecione a finalidade</option>
-                        <option value="lazer">Lazer/Recreação</option>
-                        <option value="trabalho">Trabalho/Profissional</option>
-                        <option value="exercicio">Exercício/Fitness</option>
-                        <option value="transporte">Transporte Urbano</option>
-                        <option value="turismo">Turismo</option>
-                        <option value="outro">Outro</option>
-                    </select>
-                </div>
-                
-                <div class="form-group full-width">
-                    <label for="specialRequests">
-                        <i class="fas fa-comment"></i> Observações Especiais (opcional)
-                    </label>
-                    <textarea id="specialRequests" name="specialRequests" placeholder="Alguma solicitação especial ou informação adicional..."></textarea>
+                    <input type="datetime-local" id="dataCheckOut" name="dataCheckOut" readonly
+                           <% if (disponibilidadeSelecionada != null) { %>
+                           value="<%=disponibilidadeSelecionada.getDataHoraFim_disp().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))%>"
+                           <% } %>>
                 </div>
             </div>
             
             <!-- Resumo da Reserva -->
-            <div class="price-summary">
+            <div class="price-summary" style="margin-top: 2rem;">
                 <h4><i class="fas fa-info-circle"></i> Resumo da Reserva</h4>
                 <div class="price-row">
-                    <span>Bicicleta selecionada:</span>
-                    <span id="selectedBikeName">Nenhuma selecionada</span>
+                    <span>Bicicleta:</span>
+                    <span><%=bicicleta.getNome_bike()%></span>
                 </div>
                 <div class="price-row">
-                    <span>Localização:</span>
-                    <span id="bikeLocation">-</span>
+                    <span>Tipo:</span>
+                    <span><%=bicicleta.getTipo_bike()%></span>
                 </div>
                 <div class="price-row">
-                    <span>Período selecionado:</span>
-                    <span id="selectedPeriod">-</span>
+                    <span>Local de Entrega:</span>
+                    <span><%=bicicleta.getLocalEntr_bike()%></span>
                 </div>
                 <div class="price-row">
-                    <span>Número de dias:</span>
-                    <span id="numberOfDays">0</span>
+                    <span>Proprietário:</span>
+                    <span><%=proprietario.getNomeRazaoSocial_user()%></span>
                 </div>
+                <% if (disponibilidadeSelecionada != null) { %>
+                <div class="price-row">
+                    <span>Período Sugerido:</span>
+                    <span><%=disponibilidadeSelecionada.getDataHoraIn_disp().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))%> até <%=disponibilidadeSelecionada.getDataHoraFim_disp().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))%></span>
+                </div>
+                <% } %>
                 <div class="price-row price-total">
                     <span>Status:</span>
-                    <span id="reservationStatus" style="color: #28a745; font-weight: bold;">Disponível para reserva</span>
+                    <span style="color: #28a745; font-weight: bold;">Pronto para reserva</span>
                 </div>
             </div>
             
@@ -329,12 +272,6 @@
                 </p>
             </div>
         </form>
-        
-        <div class="back-button">
-            <a href="<%=request.getContextPath()%>/pages/bicicletasLocatario.jsp" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Voltar à Busca de Bicicletas
-            </a>
-        </div>
     </div>
     
     <footer>
@@ -342,126 +279,18 @@
     </footer>
     
     <script>
-        // Dados das bicicletas
-        const bikes = {
-            bike1: { name: 'Mountain Explorer MX-2024', location: 'Vila Madalena, SP' },
-            bike2: { name: 'Speed Urbana SP-2024', location: 'Copacabana, RJ' },
-            bike3: { name: 'Urbana City UB-2024', location: 'Savassi, BH' },
-            bike4: { name: 'Dobrável Compacta DB-2024', location: 'Moinhos de Vento, POA' }
-        };
-        
-        let selectedBikeData = null;
-        
-        // Define datas mínimas
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('checkInDate').min = today;
-        document.getElementById('checkOutDate').min = today;
-        
-        function selectBike(element, bikeId) {
-            // Remove seleção anterior
-            document.querySelectorAll('.bike-selection').forEach(el => {
-                el.classList.remove('selected');
-            });
-            
-            // Adiciona seleção atual
-            element.classList.add('selected');
-            document.getElementById(bikeId).checked = true;
-            
-            // Atualiza dados da bicicleta selecionada
-            selectedBikeData = bikes[bikeId];
-            updatePriceSummary();
-        }
-        
-        function calculatePrice() {
-            const checkInDate = new Date(document.getElementById('checkInDate').value);
-            const checkOutDate = new Date(document.getElementById('checkOutDate').value);
-            
-            if (checkInDate && checkOutDate && checkOutDate > checkInDate) {
-                const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
-                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                
-                // Atualiza data mínima de checkout
-                const minCheckOut = new Date(checkInDate);
-                minCheckOut.setDate(minCheckOut.getDate() + 1);
-                document.getElementById('checkOutDate').min = minCheckOut.toISOString().split('T')[0];
-                
-                updatePriceSummary(daysDiff);
-            } else {
-                updatePriceSummary(0);
-            }
-        }
-        
-        function updatePriceSummary(days = 0) {
-            if (selectedBikeData) {
-                document.getElementById('selectedBikeName').textContent = selectedBikeData.name;
-                document.getElementById('bikeLocation').textContent = selectedBikeData.location;
-            } else {
-                document.getElementById('selectedBikeName').textContent = 'Nenhuma selecionada';
-                document.getElementById('bikeLocation').textContent = '-';
-            }
-            
-            document.getElementById('numberOfDays').textContent = days;
-            
-            // Atualizar período selecionado
-            const checkInDate = document.getElementById('checkInDate').value;
-            const checkOutDate = document.getElementById('checkOutDate').value;
-            
-            if (checkInDate && checkOutDate) {
-                document.getElementById('selectedPeriod').textContent = `${checkInDate} até ${checkOutDate}`;
-            } else {
-                document.getElementById('selectedPeriod').textContent = '-';
-            }
-        }
-        
-        // Auto-preencher local de devolução quando local de retirada for preenchido
-        document.getElementById('pickupLocation').addEventListener('blur', function() {
-            const returnLocation = document.getElementById('returnLocation');
-            if (!returnLocation.value && this.value) {
-                returnLocation.value = this.value;
-            }
-        });
-        
         // Submissão do formulário
         document.getElementById('reservationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (!selectedBikeData) {
-                alert('Por favor, selecione uma bicicleta.');
-                return;
-            }
-            
-            const checkInDate = document.getElementById('checkInDate').value;
-            const checkOutDate = document.getElementById('checkOutDate').value;
+            const checkInDate = document.getElementById('dataCheckIn').value;
+            const checkOutDate = document.getElementById('dataCheckOut').value;
             
             if (!checkInDate || !checkOutDate) {
-                alert('Por favor, preencha as datas de retirada e devolução.');
+                e.preventDefault();
+                alert('Erro: Período da reserva não está definido.');
                 return;
             }
             
-            if (new Date(checkOutDate) <= new Date(checkInDate)) {
-                alert('A data de devolução deve ser posterior à data de retirada.');
-                return;
-            }
-            
-            // Simular envio da reserva
-            const formData = new FormData(this);
-            const reservationData = {
-                bike: selectedBikeData.name,
-                location: selectedBikeData.location,
-                checkIn: checkInDate + ' ' + formData.get('checkInTime'),
-                checkOut: checkOutDate + ' ' + formData.get('checkOutTime'),
-                pickupLocation: formData.get('pickupLocation'),
-                returnLocation: formData.get('returnLocation'),
-                phone: formData.get('contactPhone'),
-                purpose: formData.get('purpose')
-            };
-            
-            console.log('Dados da reserva:', reservationData);
-            
-            alert(`Solicitação de reserva enviada com sucesso!\n\nBicicleta: ${reservationData.bike}\nLocalização: ${reservationData.location}\nPeríodo: ${reservationData.checkIn} até ${reservationData.checkOut}\n\nO proprietário receberá sua solicitação e responderá em breve.`);
-            
-            // Redirecionar para página de reservas
-            window.location.href = '<%=request.getContextPath()%>/pages/reservasLocatario.jsp';
+            // Formulário será enviado normalmente para o ReservaController
         });
     </script>
 </body>
