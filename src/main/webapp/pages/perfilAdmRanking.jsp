@@ -663,7 +663,7 @@
                         <form action="<%=request.getContextPath()%>/UsuarioController" method="post" style="display: inline-block;">
                             <input type="hidden" name="action" value="negar-ranking">
                             <input type="hidden" name="cpfCnpj" value="<%= usuario.getCpfCnpj_user() %>">
-                            <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja negar a participação no ranking?\\n\\nEsta ação irá:\\n• Remover o comprovante de bicicleta\\n• Impedir participação no ranking\\n• Usuário precisará enviar novo comprovante');">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja negar a participação no ranking?');">
                                 <i class="fas fa-times"></i>
                                 Negar Participação
                             </button>

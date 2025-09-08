@@ -373,7 +373,6 @@
             <input type="hidden" name="permissaoAcesso" value="<%= usuario.isPermissaoAcesso_user() %>">
             <input type="hidden" name="permissaoRank" value="<%= usuario.isPermissaoRank_user() %>">
             <input type="hidden" name="possuiBike" value="<%= usuario.isPossuiBike_user() %>">
-            <input type="hidden" name="fotoComprBike" value="<%= usuario.getFotoComprBike_user() != null ? usuario.getFotoComprBike_user() : "" %>">
             
             <div class="form-container">
                 <!-- Status do Usuário -->
@@ -524,7 +523,42 @@
                     </div>
                 </div>
                 
-                <!-- Configurações do Usuário -->
+                <!-- Comprovação de Bicicleta Própria -->
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-bicycle"></i>
+                        Comprovação de Bicicleta Própria
+                    </h3>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Você pode informar uma foto para comprovar que possui bicicleta própria. A validação final será feita pelo administrador.</span>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="fotoComprBike">
+                                <i class="fas fa-camera"></i>
+                                Foto de Comprovação da Bicicleta
+                            </label>
+                            <input type="text" id="fotoComprBike" name="fotoComprBike" 
+                                   value="<%= usuario.getFotoComprBike_user() != null ? usuario.getFotoComprBike_user() : "" %>"
+                                   placeholder="Ex: minha_bicicleta.jpg">
+                            <small>Digite o nome do arquivo da foto da sua bicicleta como comprovação</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-info-circle"></i>
+                                Status Atual
+                            </label>
+                            <input type="text" value="<%= obterPossuiBikeTexto(usuario.isPossuiBike_user()) %>" readonly style="background: #f8f9fa; color: #6c757d;">
+                            <small>Este status é validado pelo administrador após análise da comprovação</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informações do Sistema -->
                 <div class="form-section">
                     <h3 class="section-title">
                         <i class="fas fa-cogs"></i>
@@ -540,15 +574,6 @@
                             </label>
                             <input type="text" value="<%= usuario.getAvaliacao_user() != null && usuario.getAvaliacao_user() != 0 ? usuario.getAvaliacao_user() + " estrelas" : "Sem avaliação" %>" readonly style="background: #f8f9fa; color: #6c757d;">
                             <small>Este campo é calculado automaticamente pelo sistema</small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>
-                                <i class="fas fa-bicycle"></i>
-                                Possui Bicicleta
-                            </label>
-                            <input type="text" value="<%= obterPossuiBikeTexto(usuario.isPossuiBike_user()) %>" readonly style="background: #f8f9fa; color: #6c757d;">
-                            <small>Definido automaticamente ao cadastrar bicicletas</small>
                         </div>
                         
                         <div class="form-group">
